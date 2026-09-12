@@ -309,6 +309,10 @@ input:focus+.input-icon {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.pro-btn.selected .pro-icon {
+    filter: brightness(0) invert(1);
+}
+
 /* Advanced File Upload Dropzone */
 .file-upload-wrapper {
     position: relative;
