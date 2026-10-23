@@ -40,11 +40,56 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const FASTAPI_URL = process.env.FASTAPI_URL || 'http://localhost:8000';
+const PUBLIC_SITE_URL = process.env.PUBLIC_SITE_URL || process.env.APP_URL || 'https://coherzo.gentlemansolutions.com';
 
 const app = express();
+app.disable('x-powered-by');
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
+
+function blockSensitivePaths(req, res, next) {
+    const requestPath = req.path || '';
+    const isDotfile = /(^|\/)(\.[^\/]+)$/.test(requestPath) || requestPath.includes('/.');
+    const isBlockedExtension = /\.(json|lock|env|git|md|yml|yaml)$/i.test(requestPath);
+    const isBlockedRootFile = /(^|\/)(package\.json|package-lock\.json|\.env|\.git|comp\/)/i.test(requestPath);
+
+    if (isDotfile || isBlockedExtension || isBlockedRootFile) {
+        return res.status(404).json({ error: 'Not found' });
+    }
+
+    return next();
+}
+
+app.use(blockSensitivePaths);
+
+function buildSitemapXml() {
+    const urls = [
+        '/',
+        '/demo',
+        '/id=1',
+        '/id=2'
+    ];
+
+    const now = new Date().toISOString().slice(0, 10);
+    const xmlUrls = urls.map((route) => {
+        const loc = `${PUBLIC_SITE_URL}${route.startsWith('/') ? route : `/${route}`}`;
+        return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${route === '/' ? '1.0' : '0.8'}</priority>\n  </url>`;
+    }).join('\n');
+
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${xmlUrls}\n</urlset>\n`;
+}
+
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send(`User-agent: *\nAllow: /\nSitemap: ${PUBLIC_SITE_URL}/sitemap.xml\n`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+    res.type('application/xml');
+    res.send(buildSitemapXml());
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -334,10 +379,10 @@ async function startSock() {
                     (async () => {
                         // Kill the dying socket's listeners FIRST so its creds.update can't resurrect rows mid-clear
                         if (deadSock?.ev) {
-                            try { deadSock.ev.removeAllListeners(); } catch (e) {}
+                            try { deadSock.ev.removeAllListeners(); } catch (e) { }
                         }
                         if (deadSock?.ws) {
-                            try { deadSock.ws.close(); } catch (e) {}
+                            try { deadSock.ws.close(); } catch (e) { }
                         }
                         sock = null;
 
@@ -356,7 +401,7 @@ async function startSock() {
                             }
                         } else {
                             const authDir = process.env.DATA_PATH || './.baileys_auth_coherzo';
-                            try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (err) {}
+                            try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (err) { }
                         }
 
                         setTimeout(() => { startSock(); }, 1500);
@@ -367,10 +412,10 @@ async function startSock() {
 
                 // Normal close: fully destroy the old socket so it cannot fire more events
                 if (deadSock?.ev) {
-                    try { deadSock.ev.removeAllListeners(); } catch (e) {}
+                    try { deadSock.ev.removeAllListeners(); } catch (e) { }
                 }
                 if (deadSock?.ws) {
-                    try { deadSock.ws.close(); } catch (e) {}
+                    try { deadSock.ws.close(); } catch (e) { }
                 }
                 sock = null;
 
@@ -485,6 +530,33 @@ app.get(/^\/id=.*$/i, (req, res) => {
     }
 
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.post('/retell/start-call', async (req, res) => {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+
+        const upstream = await fetch(`${FASTAPI_URL}/retell/start-call`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body || {}),
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+
+        const text = await upstream.text();
+        try {
+            const json = JSON.parse(text);
+            return res.status(upstream.status).json(json);
+        } catch {
+            return res.status(upstream.status).send(text || 'Retell call request failed');
+        }
+    } catch (error) {
+        console.error('Proxy /retell/start-call failed:', error.message);
+        return res.status(500).json({ detail: 'Unable to reach the FastAPI Retell endpoint.' });
+    }
 });
 
 // Safe API endpoint to get the current QR code data (protected with password)
@@ -778,7 +850,7 @@ app.post('/send', async (req, res) => {
 // Endpoint to receive HTML form submissions and forward to FastAPI
 app.post('/submit-form', upload.single('image'), async (req, res) => {
     try {
-        const { phone, description, location, customer_name, plumber_id, demo, professional_type } = req.body;
+        const { phone, description, location, customer_name, plumber_id, demo, professional_type, language } = req.body;
 
         // CRITICAL: Robust demo detection. Handles "true", "1", "on", boolean true, etc.
         const isDemo = String(demo).toLowerCase() === 'true' || String(demo) === '1' || demo === true || String(demo).toLowerCase() === 'on';
@@ -800,6 +872,7 @@ app.post('/submit-form', upload.single('image'), async (req, res) => {
         // Only pass demo forward if it has a real value, to avoid sending "null" string
         if (demo) formData.append('demo', demo);
         if (professional_type) formData.append('professional_type', professional_type);
+        if (language) formData.append('language', language);
 
         if (req.file) {
             const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
@@ -845,6 +918,65 @@ app.post('/submit-form', upload.single('image'), async (req, res) => {
     }
 });
 
+
+app.post('/retell-webhook', express.json(), async (req, res) => {
+    try {
+        const { event, call } = req.body;
+        console.log(`📞 Retell event received: ${event}`);
+
+        if (event !== 'call_analyzed' && event !== 'call_ended') {
+            return res.status(200).json({ message: 'Ignored non-analyzed event' });
+        }
+
+        // Extract data from Retell call object
+        const phone = call?.from_number || call?.caller_number || '';
+        const transcript = call?.transcript || '';
+        const summary = call?.call_summary || '';
+        
+        // Use transcript or summary as the description
+        const description = summary || transcript || 'No details provided';
+
+        // Try to extract name/location from transcript using simple patterns
+        // You can replace this with more robust parsing later
+        let customer_name = '';
+        let location = '';
+        
+        const nameMatch = transcript.match(/my name is ([A-Za-z\s]+)/i);
+        if (nameMatch) customer_name = nameMatch[1].trim();
+        
+        const locMatch = transcript.match(/(?:location|address|in|at) ([A-Za-z\s,]+)/i);
+        if (locMatch) location = locMatch[1].trim();
+
+        // Build payload for your FastAPI endpoint
+        const formData = new FormData();
+        formData.append('phone', phone);
+        formData.append('description', description);
+        formData.append('location', location);
+        formData.append('customer_name', customer_name);
+        formData.append('plumber_id', '');      // not available from Retell
+        formData.append('professional_type', 'plumber');
+        formData.append('language', 'en');
+
+        // Forward to FastAPI
+        const response = await fetch(`${FASTAPI_URL}/api/incident`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`FastAPI returned ${response.status}: ${errText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Forwarded to FastAPI:', result);
+        res.status(200).json({ success: true, result });
+
+    } catch (error) {
+        console.error('Retell webhook error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 // ==========================================================================
 // ADMIN DASHBOARD PROXY ROUTES (Forward to FastAPI Backend)
 // ==========================================================================
