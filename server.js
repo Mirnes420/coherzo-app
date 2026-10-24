@@ -544,6 +544,7 @@ app.get('/retell/config', (req, res) => {
 
 const sdkClient = new RetellWebClient();
 const retellWebClient = new RetellWebClient();
+const callAgentBtn = document.getElementById('call-agent-btn');
 let isCallActive = false;
 
 // Listen to Retell state lifecycle events
