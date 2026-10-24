@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "pg": "^8.11.3",
-    "pino": "^10.3.1"
+    "pino": "^10.3.1",
+    "retell-client-js-sdk": "^3.0.3"
   }
 }

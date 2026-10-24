@@ -11,6 +11,7 @@ import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import fs from 'fs';
 import crypto from 'crypto';
+import { RetellWebClient } from "retell-client-js-sdk";
 
 // ── Load env FIRST before reading any process.env values ──
 dotenv.config({ path: '../.env' });
