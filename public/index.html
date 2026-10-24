@@ -541,30 +541,34 @@
         }
 
         callAgentBtn.addEventListener('click', async () => {
-            const rawPhone = phoneInput.value.replace(/\D/g, '');
-            const toNumber = rawPhone ? `+${rawPhone}` : undefined;
-
             try {
                 callAgentBtn.disabled = true;
-                callAgentBtn.textContent = 'Calling...';
+                callAgentBtn.textContent = 'Connecting...';
 
-                const res = await fetch('/retell/start-call', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        to_number: toNumber,
-                    })
-                });
+                const configRes = await fetch('/retell/config');
+                const config = await configRes.json().catch(() => ({}));
 
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) {
-                    throw new Error(data.detail || 'Unable to start the Retell call.');
+                if (!config.publicKey || !config.agentId) {
+                    throw new Error('Retell public key or agent id is not configured for browser calls.');
                 }
 
-                alert('Retell agent call started successfully.');
+                const { RetellClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk/+esm');
+                const client = new RetellClient({ key: config.publicKey });
+
+                const call = await client.createWebCall({
+                    agent_id: config.agentId,
+                    hooks: {
+                        onStatus: (status) => console.log('Call status:', status),
+                        onEnd: () => console.log('Call ended'),
+                        onError: (error) => console.error('Call error:', error),
+                    },
+                });
+
+                console.log('Web call active:', call?.callId || call);
+                alert('Retell agent web call started successfully.');
             } catch (err) {
                 console.error(err);
-                alert(err.message || 'Could not start the Retell call.');
+                alert(err.message || 'Could not start the Retell web call.');
             } finally {
                 callAgentBtn.disabled = false;
                 callAgentBtn.textContent = '📞 Call Retell Agent';

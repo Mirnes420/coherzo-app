@@ -532,6 +532,14 @@ app.get(/^\/id=.*$/i, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+app.get('/retell/config', (req, res) => {
+    res.json({
+        publicKey: process.env.RETELL_PUBLIC_KEY || '',
+        agentId: process.env.RETELL_AGENT_ID || '',
+        defaultNumber: process.env.RETELL_DEFAULT_NUMBER || ''
+    });
+});
+
 app.post('/retell/start-call', async (req, res) => {
     try {
         const controller = new AbortController();
