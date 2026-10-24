@@ -541,7 +541,6 @@ app.get('/retell/config', (req, res) => {
     });
 });
 
-import { RetellWebClient } from "retell-client-js-sdk";
 
 const sdkClient = new RetellWebClient();
 
