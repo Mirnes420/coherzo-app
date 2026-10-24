@@ -540,32 +540,37 @@ app.get('/retell/config', (req, res) => {
     });
 });
 
-app.post('/retell/start-call', async (req, res) => {
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 20000);
+import { RetellWebClient } from "retell-client-js-sdk";
 
-        const upstream = await fetch(`${FASTAPI_URL}/retell/start-call`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req.body || {}),
-            signal: controller.signal
-        });
+const sdkClient = new RetellWebClient();
 
-        clearTimeout(timeout);
-
-        const text = await upstream.text();
-        try {
-            const json = JSON.parse(text);
-            return res.status(upstream.status).json(json);
-        } catch {
-            return res.status(upstream.status).send(text || 'Retell call request failed');
-        }
-    } catch (error) {
-        console.error('Proxy /retell/start-call failed:', error.message);
-        return res.status(500).json({ detail: 'Unable to reach the FastAPI Retell endpoint.' });
-    }
+// Optional: listen to state updates
+sdkClient.on("call_started", () => {
+  console.log("Web call connected successfully!");
 });
+
+sdkClient.on("call_ended", () => {
+  console.log("Web call ended.");
+});
+
+async function triggerBrowserCall() {
+  try {
+    // 1. Fetch access token from your Node/FastAPI backend proxy
+    const res = await fetch('/retell/start-call', { method: 'POST' });
+    const json = await res.json();
+
+    if (!json.access_token) {
+      throw new Error("Failed to retrieve access token from backend");
+    }
+
+    // 2. Start the live browser audio session
+    await sdkClient.startCall({
+      accessToken: json.access_token,
+    });
+  } catch (err) {
+    console.error("Failed to start web call:", err);
+  }
+}
 
 // Safe API endpoint to get the current QR code data (protected with password)
 app.get('/qr', (req, res) => {

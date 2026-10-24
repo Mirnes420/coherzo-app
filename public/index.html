@@ -50,7 +50,7 @@
 
             <div style="display:flex; justify-content:flex-end; margin: 8px 0 12px;">
                 <button type="button" id="call-agent-btn" style="display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #6d5efc, #4f46e5); color: white; border: none; border-radius: 999px; padding: 10px 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);">
-                    📞 Call Retell Agent
+                    📞 Start a call
                 </button>
             </div>
 
@@ -540,40 +540,65 @@
             }
         }
 
-        callAgentBtn.addEventListener('click', async () => {
-            try {
-                callAgentBtn.disabled = true;
-                callAgentBtn.textContent = 'Connecting...';
+         callAgentBtn.addEventListener('click', async () => {
+    try {
+        callAgentBtn.disabled = true;
+        callAgentBtn.textContent = 'Connecting...';
 
-                const configRes = await fetch('/retell/config');
-                const config = await configRes.json().catch(() => ({}));
+        const configRes = await fetch('/retell/config');
+        const config = await configRes.json().catch(() => ({}));
 
-                if (!config.publicKey || !config.agentId) {
-                    throw new Error('Retell public key or agent id is not configured for browser calls.');
-                }
+        if (!config.publicKey || !config.agentId) {
+            throw new Error('Retell public key or agent id is not configured.');
+        }
 
-                const { RetellClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk/+esm');
-                const client = new RetellClient({ key: config.publicKey });
+        const { RetellClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk/+esm');
+        const client = new RetellClient({ key: config.publicKey });
 
-                const call = await client.createWebCall({
-                    agent_id: config.agentId,
-                    hooks: {
-                        onStatus: (status) => console.log('Call status:', status),
-                        onEnd: () => console.log('Call ended'),
-                        onError: (error) => console.error('Call error:', error),
-                    },
-                });
-
-                console.log('Web call active:', call?.callId || call);
-                alert('Retell agent web call started successfully.');
-            } catch (err) {
-                console.error(err);
-                alert(err.message || 'Could not start the Retell web call.');
-            } finally {
-                callAgentBtn.disabled = false;
-                callAgentBtn.textContent = '📞 Call Retell Agent';
-            }
+        const call = client.createWebCall({
+            agent_id: config.agentId,
+            hooks: {
+                onStatus: (status) => {
+                    console.log('Call status:', status);
+                    if (status === 'live') {
+                        callAgentBtn.textContent = '🔴 End Call';
+                    }
+                },
+                onEnd: () => {
+                    console.log('Call ended');
+                    resetCallButton();
+                },
+                onError: (error) => {
+                    console.error('Call error:', error);
+                    resetCallButton();
+                },
+            },
         });
+
+        // CRITICAL: Wait for the WebRTC audio channel & mic connection to settle!
+        await call.ready;
+
+        console.log('Web call connected successfully!');
+
+        // Handle ending the call on second click
+        callAgentBtn.disabled = false;
+        callAgentBtn.onclick = async () => {
+            await call.end();
+            resetCallButton();
+        };
+
+    } catch (err) {
+        console.error('Failed to start web call:', err);
+        alert(err.message || 'Could not start the Retell web call.');
+        resetCallButton();
+    }
+});
+
+function resetCallButton() {
+    callAgentBtn.disabled = false;
+    callAgentBtn.textContent = '📞 Call Agent';
+    callAgentBtn.onclick = null; // restore original listener if needed
+}
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
