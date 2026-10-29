@@ -276,9 +276,10 @@
             updateCallButtonLabel('📞 Start a call');
         }
 
+        // ─── UPDATED: pinned to SDK v3 ─────────────────────────────────────
         async function getRetellWebClient() {
             if (!retellWebClient) {
-                const { RetellWebClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk/+esm');
+                const { RetellWebClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk@3/+esm');
                 retellWebClient = new RetellWebClient();
 
                 retellWebClient.on('call_started', () => {
@@ -625,6 +626,7 @@
             }
         }
 
+        // ─── UPDATED: passes all v3 connection fields to startCall() ───────
         callAgentBtn.addEventListener('click', async () => {
             if (isCallActive && retellWebClient) {
                 try {
@@ -666,7 +668,12 @@
                 }
 
                 const client = await getRetellWebClient();
-                await client.startCall({ accessToken: data.access_token });
+                await client.startCall({
+                    accessToken: data.access_token,
+                    callId: data.call_id,
+                    transport: data.transport,
+                    iceServers: data.ice_servers
+                });
             } catch (err) {
                 console.error(err);
                 resetCallButtonState();
