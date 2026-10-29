@@ -49,8 +49,11 @@
             </div>
 
             <div style="display:flex; justify-content:flex-end; margin: 8px 0 12px;">
-                <button type="button" id="call-agent-btn" style="display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #6d5efc, #4f46e5); color: white; border: none; border-radius: 999px; padding: 10px 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);">
-                    📞 Start a call
+                <button type="button" id="call-agent-btn" class="fancy call-agent-btn" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; background: transparent; color: #111827; border: 2px solid #000; border-radius: 0; padding: 0.9rem 1.25rem; font-weight: 700; cursor: pointer; box-shadow: none; position: relative;">
+                    <span class="top-key"></span>
+                    <span class="bottom-key-1"></span>
+                    <span class="bottom-key-2"></span>
+                    <span class="text">📞 Start a call</span>
                 </button>
             </div>
 
@@ -217,6 +220,89 @@
         const phoneError = document.getElementById('phone-error');
         const phoneHint = document.getElementById('phone-hint');
         const callAgentBtn = document.getElementById('call-agent-btn');
+
+        let retellWebClient = null;
+        let isCallActive = false;
+        let toastTimer = null;
+
+        function showToast(message, type = 'success') {
+            let toast = document.getElementById('retell-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'retell-toast';
+                toast.style.position = 'fixed';
+                toast.style.right = '20px';
+                toast.style.bottom = '20px';
+                toast.style.padding = '12px 16px';
+                toast.style.borderRadius = '10px';
+                toast.style.color = '#fff';
+                toast.style.fontWeight = '700';
+                toast.style.boxShadow = '0 12px 28px rgba(0,0,0,0.2)';
+                toast.style.zIndex = '99999';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                toast.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                document.body.appendChild(toast);
+            }
+
+            const colors = {
+                success: '#10b981',
+                info: '#3b82f6',
+                error: '#ef4444'
+            };
+
+            toast.textContent = message;
+            toast.style.background = colors[type] || colors.success;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+            }, 2600);
+        }
+
+        function updateCallButtonLabel(label) {
+            const labelNode = callAgentBtn.querySelector('.text');
+            if (labelNode) {
+                labelNode.textContent = label;
+            }
+        }
+
+        function resetCallButtonState() {
+            isCallActive = false;
+            callAgentBtn.disabled = false;
+            callAgentBtn.classList.remove('is-active');
+            updateCallButtonLabel('📞 Start a call');
+        }
+
+        async function getRetellWebClient() {
+            if (!retellWebClient) {
+                const { RetellWebClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk/+esm');
+                retellWebClient = new RetellWebClient();
+
+                retellWebClient.on('call_started', () => {
+                    isCallActive = true;
+                    callAgentBtn.disabled = false;
+                    callAgentBtn.classList.add('is-active');
+                    updateCallButtonLabel('🔴 End Call');
+                    showToast('Retell agent connected');
+                });
+
+                retellWebClient.on('call_ended', () => {
+                    resetCallButtonState();
+                    showToast('Retell call ended');
+                });
+
+                retellWebClient.on('error', (error) => {
+                    console.error('Retell call error:', error);
+                    resetCallButtonState();
+                    showToast('Retell call error', 'error');
+                });
+            }
+            return retellWebClient;
+        }
 
         const portalCard = document.getElementById('portal-card');
         const successCard = document.getElementById('success-card');
@@ -540,38 +626,52 @@
             }
         }
 
-         callAgentBtn.addEventListener('click', async () => {
+        callAgentBtn.addEventListener('click', async () => {
+            if (isCallActive && retellWebClient) {
+                try {
+                    callAgentBtn.disabled = true;
+                    updateCallButtonLabel('Ending...');
+                    await retellWebClient.stopCall();
+                    showToast('Ending Retell call');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Could not end the Retell call', 'error');
+                    resetCallButtonState();
+                }
+                return;
+            }
+
             try {
                 callAgentBtn.disabled = true;
-                callAgentBtn.textContent = 'Connecting...';
+                updateCallButtonLabel('Connecting...');
 
-                const configRes = await fetch('/retell/config');
-                const config = await configRes.json().catch(() => ({}));
-
-                if (!config.publicKey || !config.agentId) {
-                    throw new Error('Retell public key or agent id is not configured for browser calls.');
+                const pathSegments = window.location.pathname.split('/').filter(Boolean);
+                let contractorId = '1';
+                const idSegment = pathSegments.find(seg => seg.startsWith('id=') || !isNaN(seg));
+                if (idSegment) {
+                    contractorId = idSegment.startsWith('id=') ? idSegment.split('=')[1] : idSegment;
+                } else {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    contractorId = urlParams.get('id') || urlParams.get('contractor_id') || '1';
                 }
 
-                const { RetellClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk/+esm');
-                const client = new RetellClient({ key: config.publicKey });
-
-                const call = await client.createWebCall({
-                    agent_id: config.agentId,
-                    hooks: {
-                        onStatus: (status) => console.log('Call status:', status),
-                        onEnd: () => console.log('Call ended'),
-                        onError: (error) => console.error('Call error:', error),
-                    },
+                const res = await fetch('/retell/start-call', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contractor_id: contractorId })
                 });
 
-                console.log('Web call active:', call?.callId || call);
-                alert('Retell agent web call started successfully.');
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.access_token) {
+                    throw new Error(data.detail || 'Unable to start the Retell call.');
+                }
+
+                const client = await getRetellWebClient();
+                await client.startCall({ accessToken: data.access_token });
             } catch (err) {
                 console.error(err);
-                alert(err.message || 'Could not start the Retell web call.');
-            } finally {
-                callAgentBtn.disabled = false;
-                callAgentBtn.textContent = '📞 Make a call';
+                resetCallButtonState();
+                showToast(err.message || 'Could not start the Retell web call.', 'error');
             }
         });
 
