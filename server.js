@@ -93,35 +93,21 @@ app.get('/sitemap.xml', (req, res) => {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/retell/start-call', async (req, res) => {
-    try {
-        const response = await fetch(`${FASTAPI_URL}/retell/start-call`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
-            },
-            body: JSON.stringify(req.body || {})
-        });
+// Correct frontend flow:
+async function startCall() {
+    const response = await fetch('/retell/start-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contractor_id: currentContractorId })
+    });
+    const data = await response.json();
 
-        const contentType = response.headers.get('content-type') || '';
-        const rawText = await response.text();
-
-        if (contentType.includes('application/json')) {
-            try {
-                const json = JSON.parse(rawText);
-                return res.status(response.status).json(json);
-            } catch {
-                return res.status(response.status).send(rawText);
-            }
-        }
-
-        return res.status(response.status).send(rawText);
-    } catch (err) {
-        console.error('Proxy error connecting to FastAPI /retell/start-call:', err.message);
-        return res.status(502).json({ error: 'Backend server communication failure.' });
-    }
-});
+    // Pass the access_token returned by YOUR backend into Retell's SDK
+    const retellClient = new RetellWebClient();
+    await retellClient.startCall({
+        accessToken: data.access_token, // This is the Retell access token, NOT a LiveKit token
+    });
+}
 
 const upload = multer({ storage: multer.memoryStorage() });
 
