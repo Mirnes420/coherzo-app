@@ -120,6 +120,11 @@ app.post('/retell/start-call', async (req, res) => {
         // 4. Default fallback integer ID
         contractorId = contractorId || '1';
 
+        if (process.env.RETELL_AGENT_ID && body.agent_id && body.agent_id !== process.env.RETELL_AGENT_ID) {
+            console.warn(`Ignoring stale Retell agent_id=${body.agent_id}; using configured env agent_id=${process.env.RETELL_AGENT_ID}`);
+            body.agent_id = process.env.RETELL_AGENT_ID;
+        }
+
         console.log('Extracted contractor ID:', contractorId);
 
         // Make sure it's passed in the payload sent to FastAPI

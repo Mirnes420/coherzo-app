@@ -725,6 +725,17 @@
             }
         }
 
+        async function getRetellConfig() {
+            try {
+                const res = await fetch('/retell/config');
+                if (!res.ok) return { agentId: '', publicKey: '' };
+                return await res.json();
+            } catch (err) {
+                console.warn('Failed to load Retell config:', err);
+                return { agentId: '', publicKey: '' };
+            }
+        }
+
         // ─── UPDATED: passes all v3 connection fields to startCall() ───────
         callAgentBtn.addEventListener('click', async () => {
             if (isCallActive && retellWebClient) {
@@ -755,7 +766,9 @@
                     contractorId = urlParams.get('id') || urlParams.get('contractor_id') || '1';
                 }
 
-                const payload = { contractor_id: contractorId, agent_id: '5958e3e09a84af41393d2964d737fe90' };
+                const retellConfig = await getRetellConfig();
+                const configuredAgentId = retellConfig.agentId || 'agent_d9f85d3df4926cf8890265a975';
+                const payload = { contractor_id: contractorId, agent_id: configuredAgentId };
                 const res = await fetch(`/retell/start-call?id=${encodeURIComponent(contractorId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
