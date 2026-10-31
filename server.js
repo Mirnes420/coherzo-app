@@ -143,12 +143,7 @@ app.post('/retell/start-call', async (req, res) => {
 });
 
 
-        // 2. Request access token from backend with contractor data
-        const res = await fetch('/retell/start-call', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contractor_id: contractorId })
-        });
+
 
 const upload = multer({ storage: multer.memoryStorage() });
 
