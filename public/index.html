@@ -47,15 +47,12 @@
                 </div>
             </div>
 
-            <div style="display:flex; justify-content:flex-end; margin: 8px 0 12px;">
-                <button type="button" id="call-agent-btn" class="fancy call-agent-btn" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; background: transparent; color: #111827; border: 2px solid #000; border-radius: 0; padding: 0.9rem 1.25rem; font-weight: 700; cursor: pointer; box-shadow: none; position: relative;">
-                    <span class="top-key"></span>
-                    <span class="bottom-key-1"></span>
-                    <span class="bottom-key-2"></span>
-                    <span class="text">📞 Start a call</span>
-                </button>
+            <div class="mode-switch" role="tablist" aria-label="Interaction mode">
+                <button type="button" class="mode-btn is-active" data-mode="form">Form</button>
+                <button type="button" class="mode-btn" data-mode="voice">Voice</button>
             </div>
 
+            <div class="mode-panel is-active" id="form-mode-panel">
             <form id="incident-form">
                 <!-- STEP 1: Issue + Professional Selector -->
                 <div class="step-content active" id="step-panel-1">
@@ -192,6 +189,33 @@
                     </button>
                 </div>
             </form>
+            </div>
+
+            <div class="mode-panel" id="voice-mode-panel">
+                <div class="voice-call-shell">
+                    <div class="voice-status-row">
+                        <span class="voice-status-label">Live call</span>
+                        <span id="voice-status-dot" class="voice-status-dot"></span>
+                    </div>
+
+                    <div class="voice-transcript-panel">
+                        <div class="voice-transcript-header">
+                            <span>Real-time transcript</span>
+                            <span class="voice-live-tag">LIVE</span>
+                        </div>
+                        <div id="voice-transcript" class="voice-transcript-stream">
+                            <div class="empty-state">Start the call to see the live conversation here.</div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="call-agent-btn" class="fancy call-agent-btn" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; background: transparent; color: #111827; border: 2px solid #000; border-radius: 0; padding: 0.9rem 1.25rem; font-weight: 700; cursor: pointer; box-shadow: none; position: relative;">
+                        <span class="top-key"></span>
+                        <span class="bottom-key-1"></span>
+                        <span class="bottom-key-2"></span>
+                        <span class="text">📞 Start a call</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="minimal-card success-screen" id="success-card"
@@ -219,6 +243,66 @@
         const phoneError = document.getElementById('phone-error');
         const phoneHint = document.getElementById('phone-hint');
         const callAgentBtn = document.getElementById('call-agent-btn');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const modePanels = document.querySelectorAll('.mode-panel');
+        const voiceTranscript = document.getElementById('voice-transcript');
+
+        function setActiveMode(mode) {
+            modeButtons.forEach((button) => {
+                button.classList.toggle('is-active', button.dataset.mode === mode);
+            });
+            modePanels.forEach((panel) => {
+                panel.classList.toggle('is-active', panel.id === `${mode}-mode-panel`);
+            });
+        }
+
+        modeButtons.forEach((button) => {
+            button.addEventListener('click', () => setActiveMode(button.dataset.mode));
+        });
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function appendVoiceLine(role, content) {
+            if (!content || !voiceTranscript) return;
+            const empty = voiceTranscript.querySelector('.empty-state');
+            if (empty) empty.remove();
+
+            const line = document.createElement('div');
+            line.className = `voice-line ${role}`;
+            const label = role === 'agent' ? 'Agent' : role === 'user' ? 'You' : 'System';
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            line.innerHTML = `
+                <div class="voice-line-meta">${time} · ${label}</div>
+                <div class="voice-line-text">${escapeHtml(content)}</div>
+            `;
+            voiceTranscript.appendChild(line);
+            voiceTranscript.scrollTop = voiceTranscript.scrollHeight;
+        }
+
+        function handleRetellTranscriptPayload(payload) {
+            const items = Array.isArray(payload) ? payload :
+                Array.isArray(payload?.transcripts) ? payload.transcripts :
+                Array.isArray(payload?.utterances) ? payload.utterances :
+                [];
+
+            if (!items.length) return;
+
+            items.forEach((item) => {
+                if (!item) return;
+                const role = String(item.role || item.speaker || item.type || 'system').toLowerCase();
+                const text = item.content || item.text || item.message || item.transcript || '';
+                if (text) {
+                    appendVoiceLine(role === 'agent' || role === 'assistant' ? 'agent' : role === 'user' || role === 'customer' ? 'user' : 'system', text);
+                }
+            });
+        }
 
         let retellWebClient = null;
         let isCallActive = false;
@@ -287,12 +371,21 @@
                     callAgentBtn.disabled = false;
                     callAgentBtn.classList.add('is-active');
                     updateCallButtonLabel('🔴 End Call');
+                    setActiveMode('voice');
                     showToast('Retell agent connected');
                 });
 
                 retellWebClient.on('call_ended', () => {
                     resetCallButtonState();
                     showToast('Retell call ended');
+                });
+
+                retellWebClient.on('update', (payload) => {
+                    handleRetellTranscriptPayload(payload);
+                });
+
+                retellWebClient.on('metadata', (payload) => {
+                    handleRetellTranscriptPayload(payload);
                 });
 
                 retellWebClient.on('error', (error) => {
@@ -656,10 +749,11 @@
                     contractorId = urlParams.get('id') || urlParams.get('contractor_id') || '1';
                 }
 
-                const res = await fetch('/retell/start-call', {
+                const payload = { contractor_id: contractorId, agent_id: '5958e3e09a84af41393d2964d737fe90' };
+                const res = await fetch(`/retell/start-call?id=${encodeURIComponent(contractorId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contractor_id: contractorId })
+                    body: JSON.stringify(payload)
                 });
 
                 const data = await res.json().catch(() => ({}));

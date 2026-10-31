@@ -95,13 +95,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/retell/start-call', async (req, res) => {
     try {
-        const response = await fetch(`${FASTAPI_URL}/retell/start-call`, {
+        const url = new URL(`${FASTAPI_URL}/retell/start-call`);
+        const body = req.body || {};
+
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        let contractorId = '1'; // fallback
+
+        // Check if pathname contains 'id=X' or ends with a number (e.g., /id=1 or /1)
+        const idSegment = pathSegments.find(seg => seg.startsWith('id=') || !isNaN(seg));
+        if (idSegment) {
+            contractorId = idSegment.startsWith('id=') ? idSegment.split('=')[1] : idSegment;
+        } else {
+            // Fallback check for standard query param (?id=1 or ?contractor_id=1)
+            const urlParams = new URLSearchParams(window.location.search);
+            contractorId = urlParams.get('id') || urlParams.get('contractor_id') || '1';
+        }
+
+        console.log('Extracted contractor ID:', contractorId);
+
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
             },
-            body: JSON.stringify(req.body || {})
+            body: JSON.stringify(body)
         });
 
         const contentType = response.headers.get('content-type') || '';
@@ -122,6 +141,14 @@ app.post('/retell/start-call', async (req, res) => {
         return res.status(502).json({ error: 'Backend server communication failure.' });
     }
 });
+
+
+        // 2. Request access token from backend with contractor data
+        const res = await fetch('/retell/start-call', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contractor_id: contractorId })
+        });
 
 const upload = multer({ storage: multer.memoryStorage() });
 
