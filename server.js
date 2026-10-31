@@ -98,21 +98,32 @@ app.post('/retell/start-call', async (req, res) => {
         const url = new URL(`${FASTAPI_URL}/retell/start-call`);
         const body = req.body || {};
 
-        const pathSegments = window.location.pathname.split('/').filter(Boolean);
-        let contractorId = '1'; // fallback
+        // 1. Extract path segments and query directly from Express's req object
+        const fullUrl = req.originalUrl || req.url; // e.g. "/retell/start-call/id=2" or "/retell/start-call?id=2"
+        const pathSegments = fullUrl.split('?')[0].split('/').filter(Boolean);
+        
+        let contractorId = body.contractor_id || null;
 
-        // Check if pathname contains 'id=X' or ends with a number (e.g., /id=1 or /1)
-        const idSegment = pathSegments.find(seg => seg.startsWith('id=') || !isNaN(seg));
-        if (idSegment) {
-            contractorId = idSegment.startsWith('id=') ? idSegment.split('=')[1] : idSegment;
-        } else {
-            // Fallback check for standard query param (?id=1 or ?contractor_id=1)
-            const urlParams = new URLSearchParams(window.location.search);
-            contractorId = urlParams.get('id') || urlParams.get('contractor_id') || '1';
+        // 2. Check path segments (e.g., /id=2 or /2)
+        if (!contractorId) {
+            const idSegment = pathSegments.find(seg => seg.startsWith('id=') || (/^\d+$/).test(seg));
+            if (idSegment) {
+                contractorId = idSegment.startsWith('id=') ? idSegment.split('=')[1] : idSegment;
+            }
         }
+
+        // 3. Check query parameters (?id=2 or ?contractor_id=2)
+        if (!contractorId) {
+            contractorId = req.query?.id || req.query?.contractor_id;
+        }
+
+        // 4. Default fallback integer ID
+        contractorId = contractorId || '1';
 
         console.log('Extracted contractor ID:', contractorId);
 
+        // Make sure it's passed in the payload sent to FastAPI
+        body.contractor_id = contractorId;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -152,7 +163,7 @@ async function runAdminMigration() {
     const pool = getDbPool();
     if (!pool) return;
     try {
-        await pool.query(`ALTER TABLE plumbers ADD COLUMN IF NOT EXISTS password_hash TEXT`);
+        await pool.query(`ALTER TABLE contractors ADD COLUMN IF NOT EXISTS password_hash TEXT`);
         console.log('✅ Admin migration: password_hash column ready.');
     } catch (err) {
         console.error('⚠️ Admin migration error:', err.message);
