@@ -24,36 +24,36 @@
 
     <div class="container">
         <div class="minimal-card" id="portal-card">
-            <div class="header">
-                <div class="eyebrow">Explain your incident, let us do the rest.</div>
-                <h1>Report an incident.</h1>
-                <p class="subtitle">Submit details below. Professionals get a structured incident report on WhatsApp in seconds.</p>
-            </div>
-
-            <!-- Visual Progress Bar -->
-            <div class="steps-progress-container">
-                <div class="progress-bar-fill" id="progress-bar-fill"></div>
-                <div class="step-indicator active" id="indicator-1">
-                    1
-                    <div class="step-indicator-label">Issue</div>
-                </div>
-                <div class="step-indicator" id="indicator-2">
-                    2
-                    <div class="step-indicator-label">Photo</div>
-                </div>
-                <div class="step-indicator" id="indicator-3">
-                    3
-                    <div class="step-indicator-label">Contact</div>
-                </div>
-            </div>
-
             <div class="mode-switch" role="tablist" aria-label="Interaction mode">
-                <button type="button" class="mode-btn is-active" data-mode="form">Form</button>
-                <button type="button" class="mode-btn" data-mode="voice">Voice</button>
+                <button type="button" class="mode-btn" data-mode="form">Form</button>
+                <button type="button" class="mode-btn is-active" data-mode="voice">Voice</button>
             </div>
 
-            <div class="mode-panel is-active" id="form-mode-panel">
-            <form id="incident-form">
+            <div class="mode-panel" id="form-mode-panel">
+                <div class="header">
+                    <div class="eyebrow">Explain your incident, let us do the rest.</div>
+                    <h1>Report an incident.</h1>
+                    <p class="subtitle">Submit details below. Professionals get a structured incident report on WhatsApp in seconds.</p>
+                </div>
+
+                <!-- Visual Progress Bar -->
+                <div class="steps-progress-container">
+                    <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                    <div class="step-indicator active" id="indicator-1">
+                        1
+                        <div class="step-indicator-label">Issue</div>
+                    </div>
+                    <div class="step-indicator" id="indicator-2">
+                        2
+                        <div class="step-indicator-label">Photo</div>
+                    </div>
+                    <div class="step-indicator" id="indicator-3">
+                        3
+                        <div class="step-indicator-label">Contact</div>
+                    </div>
+                </div>
+
+                <form id="incident-form">
                 <!-- STEP 1: Issue + Professional Selector -->
                 <div class="step-content active" id="step-panel-1">
 
@@ -191,8 +191,14 @@
             </form>
             </div>
 
-            <div class="mode-panel" id="voice-mode-panel">
+            <div class="mode-panel is-active" id="voice-mode-panel">
                 <div class="voice-call-shell">
+                    <div class="header voice-header">
+                        <div class="eyebrow">Speak naturally, we’ll capture the details.</div>
+                        <h1>Live voice intake</h1>
+                        <p class="subtitle">Use this mode for a real-time call with the agent while the transcript stays visible to you.</p>
+                    </div>
+
                     <div class="voice-status-row">
                         <span class="voice-status-label">Live call</span>
                         <span id="voice-status-dot" class="voice-status-dot"></span>

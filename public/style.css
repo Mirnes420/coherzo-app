@@ -309,7 +309,7 @@ body {
     border: 0;
     border-radius: 999px;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--color-secondary);
     font-weight: 700;
     font-size: 0.82rem;
     letter-spacing: 0.02em;
@@ -317,6 +317,11 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: none;
+    border: 1px solid var(--border-color);
+}
+
+.mode-btn:hover {
+color: var(--bg-color);
 }
 
 .mode-btn.is-active {
@@ -331,6 +336,10 @@ body {
 
 .mode-panel.is-active {
     display: block;
+}
+
+.voice-header {
+    margin-bottom: 0.75rem;
 }
 
 .voice-call-shell {
