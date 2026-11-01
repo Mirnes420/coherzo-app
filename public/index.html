@@ -286,6 +286,40 @@
                 .replace(/'/g, '&#039;');
         }
 
+        function isTranscriptNearBottom() {
+            if (!voiceTranscript) return true;
+            const threshold = 120;
+            const distanceFromBottom = voiceTranscript.scrollHeight - voiceTranscript.scrollTop - voiceTranscript.clientHeight;
+            return distanceFromBottom <= threshold;
+        }
+
+        function scrollTranscriptToBottom({ smooth = true } = {}) {
+            if (!voiceTranscript) return;
+            if (!isTranscriptNearBottom()) return;
+
+            const top = Math.max(voiceTranscript.scrollHeight - voiceTranscript.clientHeight, 0);
+            voiceTranscript.scrollTo({
+                top,
+                behavior: smooth ? 'smooth' : 'auto'
+            });
+        }
+
+        function appendSystemLine(message, muted = false) {
+            if (!message || !voiceTranscript) return;
+            const empty = voiceTranscript.querySelector('.empty-state');
+            if (empty) empty.remove();
+
+            const line = document.createElement('div');
+            line.className = 'voice-line system';
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            line.innerHTML = `
+                <div class="voice-line-meta">${time} · System</div>
+                <div class="voice-line-text" style="${muted ? 'opacity:0.6; font-style:italic;' : ''}">${escapeHtml(message)}</div>
+            `;
+            voiceTranscript.appendChild(line);
+            scrollTranscriptToBottom({ smooth: true });
+        }
+
         function appendVoiceLine(role, content) {
             if (!content || !voiceTranscript) return;
             const empty = voiceTranscript.querySelector('.empty-state');
@@ -300,10 +334,7 @@
                 <div class="voice-line-text">${escapeHtml(content)}</div>
             `;
             voiceTranscript.appendChild(line);
-            voiceTranscript.scrollTo({
-                top: voiceTranscript.scrollHeight,
-                behavior: 'smooth'
-            });
+            scrollTranscriptToBottom({ smooth: true });
         }
 
         // ── Transcript state ─────────────────────────────────────────────
@@ -320,14 +351,7 @@
             renderedTranscriptCount = 0;
             lastLiveLine = null;
             lastLiveRole = null;
-            // Show a subtle "connected" status so the panel is not blank
-            const status = document.createElement('div');
-            status.className = 'voice-line system';
-            status.innerHTML = `
-                <div class="voice-line-meta">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · System</div>
-                <div class="voice-line-text" style="opacity:0.6; font-style:italic;">Call connected — agent will speak shortly…</div>
-            `;
-            voiceTranscript.appendChild(status);
+            appendSystemLine('Call connected — agent will speak shortly…', true);
         }
 
         function normalizeRetellTranscriptItems(payload) {
@@ -912,8 +936,9 @@
                         },
                         onEnd: (event) => {
                             debugLogToPanel('end', event);
+                            appendSystemLine('Call ended normally.');
                             resetCallButtonState();
-                            showToast('Retell call ended');
+                            showToast('Call ended normally');
                         },
                         onError: (error) => {
                             debugLogToPanel('error', error);

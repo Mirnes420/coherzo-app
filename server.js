@@ -421,10 +421,17 @@ async function startSock() {
                 }
 
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
+                const isSessionConflict = statusCode === 440 || lastDisconnect?.error?.message === 'Stream Errored (conflict)' || lastDisconnect?.error?.output?.payload?.message === 'Stream Errored (conflict)';
+                const isStreamReplaced = lastDisconnect?.error?.data?.attrs?.type === 'replaced' || lastDisconnect?.error?.message === 'Stream Errored (conflict)' || lastDisconnect?.error?.output?.payload?.message === 'Stream Errored (conflict)';
 
-                // If WA returned 428 (Precondition Required / Connection Terminated), clear saved auth and force a fresh login (QR)
-                if (statusCode === 428) {
-                    console.log('Detected 428 Connection Terminated — clearing saved auth and forcing a fresh QR');
+                // If WA reported a stale session/stream conflict or a terminated connection,
+                // clear saved auth and force a fresh login instead of reconnecting forever.
+                // NOTE: a `type: replaced` conflict means another session already owns the account.
+                // Auto-restarting immediately only loops against that replacement, so we pause the loop
+                // until an explicit restart / fresh login is performed.
+                if (statusCode === 428 || statusCode === 440 || isSessionConflict) {
+                    const reasonText = statusCode === 428 ? 'Connection Terminated' : isStreamReplaced ? 'Stream replaced by another session' : 'Stream conflict / stale session';
+                    console.log(`Detected ${statusCode || '440'} ${reasonText} — clearing saved auth and resetting the socket state.`);
                     currentQR = "";
 
                     const now = Date.now();
@@ -434,11 +441,10 @@ async function startSock() {
 
                     if (clearAuthAttempts >= MAX_CLEAR_ATTEMPTS) {
                         console.warn('Max auth-clear attempts reached. Backing off before next attempt.');
-                        // Back off for a longer period and then try once
                         setTimeout(() => {
                             clearAuthAttempts = 0;
-                            try { startSock(); } catch (e) { console.error('Restart after backoff failed:', e.message); }
-                        }, 30 * 60 * 1000); // 30 minutes
+                            try { if (!isStartingSock) startSock(); } catch (e) { console.error('Restart after backoff failed:', e.message); }
+                        }, 30 * 60 * 1000);
                         return;
                     }
 
@@ -446,7 +452,6 @@ async function startSock() {
                     lastClearTime = now;
 
                     (async () => {
-                        // Kill the dying socket's listeners FIRST so its creds.update can't resurrect rows mid-clear
                         if (deadSock?.ev) {
                             try { deadSock.ev.removeAllListeners(); } catch (e) { }
                         }
@@ -455,8 +460,6 @@ async function startSock() {
                         }
                         sock = null;
 
-                        // Must match the prefix used in getAuthStateStore() above, or this
-                        // clear becomes a no-op against the wrong rows.
                         const KEY_PREFIX = process.env.BAILEYS_AUTH_PREFIX || 'coherzo:';
                         if (process.env.DATABASE_URL) {
                             const pool = getDbPool();
@@ -473,7 +476,11 @@ async function startSock() {
                             try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (err) { }
                         }
 
-                        setTimeout(() => { startSock(); }, 1500);
+                        if (!isStreamReplaced) {
+                            setTimeout(() => { if (!isStartingSock) startSock(); }, 1500);
+                        } else {
+                            console.warn('Stream conflict is marked as "replaced" — skipping the immediate reconnect to avoid an endless auth loop. Restart the app or re-scan after the other session is closed.');
+                        }
                     })();
 
                     return;
