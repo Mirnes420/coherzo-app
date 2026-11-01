@@ -432,6 +432,7 @@
         }
 
         let retellWebClient = null;
+        let retellSession = null;
         let isCallActive = false;
         let toastTimer = null;
 
@@ -482,13 +483,13 @@
 
         function resetCallButtonState() {
             isCallActive = false;
+            retellSession = null;
             callAgentBtn.disabled = false;
             callAgentBtn.classList.remove('is-active');
             updateCallButtonLabel('📞 Start a call');
         }
 
         // ─── Retell SDK v3 client setup ────────────────────────────────────
-        // DEBUG helper: prints raw event payload directly in the transcript panel
         function debugLogToPanel(eventName, payload) {
             if (!voiceTranscript) return;
             const el = document.createElement('div');
@@ -500,51 +501,18 @@
             voiceTranscript.scrollTop = voiceTranscript.scrollHeight;
         }
 
+        function renderRetellTranscript(transcript) {
+            if (!Array.isArray(transcript) || !voiceTranscript) return;
+            const utterances = transcript.filter((item) => item && (item.role === 'agent' || item.role === 'user') && typeof item.content === 'string' && item.content.trim());
+            if (!utterances.length) return;
+            voiceTranscript.innerHTML = '';
+            utterances.forEach((item) => appendVoiceLine(item.role, item.content));
+        }
+
         async function getRetellWebClient() {
             if (!retellWebClient) {
-                const { RetellWebClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk@3/+esm');
-                retellWebClient = new RetellWebClient();
-
-                retellWebClient.on('call_started', () => {
-                    isCallActive = true;
-                    clearTranscriptForNewCall();
-                    callAgentBtn.disabled = false;
-                    callAgentBtn.classList.add('is-active');
-                    updateCallButtonLabel('🔴 End Call');
-                    setActiveMode('voice');
-                    showToast('Retell agent connected');
-                });
-
-                retellWebClient.on('call_ended', () => {
-                    resetCallButtonState();
-                    showToast('Retell call ended');
-                });
-
-                // Log every update so we can see the exact payload shape
-                retellWebClient.on('update', (payload) => {
-                    debugLogToPanel('update', payload);
-                    handleRetellTranscriptPayload(payload, true);
-                });
-
-                retellWebClient.on('transcript', (payload) => {
-                    debugLogToPanel('transcript', payload);
-                    handleRetellTranscriptPayload(payload, true);
-                });
-
-                retellWebClient.on('metadata', (payload) => {
-                    debugLogToPanel('metadata', payload);
-                    handleRetellTranscriptPayload(payload, false);
-                });
-
-                // Catch any other events the SDK fires that we might be missing
-                retellWebClient.on('audio', () => { /* audio chunk — ignore */ });
-
-                retellWebClient.on('error', (error) => {
-                    debugLogToPanel('error', error);
-                    console.error('Retell call error:', error);
-                    resetCallButtonState();
-                    showToast('Retell call error', 'error');
-                });
+                const { RetellClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk@3/+esm');
+                retellWebClient = new RetellClient();
             }
             return retellWebClient;
         }
@@ -882,13 +850,12 @@
             }
         }
 
-        // ─── UPDATED: passes all v3 connection fields to startCall() ───────
         callAgentBtn.addEventListener('click', async () => {
-            if (isCallActive && retellWebClient) {
+            if (isCallActive && retellSession) {
                 try {
                     callAgentBtn.disabled = true;
                     updateCallButtonLabel('Ending...');
-                    await retellWebClient.stopCall();
+                    await retellSession.end();
                     showToast('Ending Retell call');
                 } catch (err) {
                     console.error(err);
@@ -914,29 +881,56 @@
 
                 const retellConfig = await getRetellConfig();
                 const configuredAgentId = retellConfig.agentId || 'agent_d9f85d3df4926cf8890265a975';
-                const payload = {
-                    contractor_id: contractorId,
-                    agent_id: configuredAgentId,
-                    transcript: true
-                };
-                const res = await fetch(`/retell/start-call?id=${encodeURIComponent(contractorId)}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok || !data.access_token) {
-                    throw new Error(data.detail || 'Unable to start the Retell call.');
+                const publicKey = retellConfig.publicKey || '';
+                if (!publicKey) {
+                    throw new Error('Retell public key is missing.');
                 }
 
-                const client = await getRetellWebClient();
-                await client.startCall({
-                    accessToken: data.access_token,
-                    callId: data.call_id,
-                    transport: data.transport,
-                    iceServers: data.ice_servers
+                const { RetellClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk@3/+esm');
+                const client = new RetellClient({ key: publicKey });
+                retellSession = client.createWebCall({
+                    agent_id: configuredAgentId,
+                    transcript: true,
+                    retell_llm_dynamic_variables: {
+                        contractor_id: contractorId,
+                    },
+                    hooks: {
+                        onStatus: (status) => {
+                            debugLogToPanel('status', { status });
+                            if (status === 'live') {
+                                isCallActive = true;
+                                callAgentBtn.disabled = false;
+                                callAgentBtn.classList.add('is-active');
+                                updateCallButtonLabel('🔴 End Call');
+                                setActiveMode('voice');
+                                showToast('Retell agent connected');
+                            }
+                        },
+                        onTranscript: (transcript) => {
+                            debugLogToPanel('transcript', transcript);
+                            renderRetellTranscript(transcript);
+                        },
+                        onEnd: (event) => {
+                            debugLogToPanel('end', event);
+                            resetCallButtonState();
+                            showToast('Retell call ended');
+                        },
+                        onError: (error) => {
+                            debugLogToPanel('error', error);
+                            console.error('Retell call error:', error);
+                            resetCallButtonState();
+                            showToast('Retell call error', 'error');
+                        }
+                    }
                 });
+
+                await retellSession.ready;
+                isCallActive = true;
+                clearTranscriptForNewCall();
+                callAgentBtn.disabled = false;
+                callAgentBtn.classList.add('is-active');
+                updateCallButtonLabel('🔴 End Call');
+                setActiveMode('voice');
             } catch (err) {
                 console.error(err);
                 resetCallButtonState();
