@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coherzo | Emergency Home Services</title>
+    <title>Coherzo</title>
     <link rel="icon" type="image/x-icon" href="logo.png">
     <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
 
@@ -33,7 +33,8 @@
                 <div class="header">
                     <div class="eyebrow">Explain your incident, let us do the rest.</div>
                     <h1>Report an incident.</h1>
-                    <p class="subtitle">Submit details below. Professionals get a structured incident report on WhatsApp in seconds.</p>
+                    <p class="subtitle">Submit details below. Professionals get a structured incident report on WhatsApp
+                        in seconds.</p>
                 </div>
 
                 <!-- Visual Progress Bar -->
@@ -54,141 +55,149 @@
                 </div>
 
                 <form id="incident-form">
-                <!-- STEP 1: Issue + Professional Selector -->
-                <div class="step-content active" id="step-panel-1">
+                    <!-- STEP 1: Issue + Professional Selector -->
+                    <div class="step-content active" id="step-panel-1">
 
-                    <!-- Professional Type Selector -->
-                    <div class="form-group">
-                        <label>Service Type</label>
-                        <div class="pro-selector-group">
-                            <button type="button" class="pro-btn selected" id="pro-plumber" data-type="plumber">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Map_icons_by_Scott_de_Jonge_-_plumber.svg" alt="Plumber" class="pro-icon" style="width: 24px; height: 24px; margin-bottom: 4px;">
-                                Plumber
-                            </button>
+                        <!-- Professional Type Selector -->
+                        <div class="form-group">
+                            <label>Service Type</label>
+                            <div class="pro-selector-group">
+                                <button type="button" class="pro-btn selected" id="pro-plumber" data-type="plumber">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Map_icons_by_Scott_de_Jonge_-_plumber.svg"
+                                        alt="Plumber" class="pro-icon"
+                                        style="width: 24px; height: 24px; margin-bottom: 4px;">
+                                    Plumber
+                                </button>
 
-                            <button type="button" class="pro-btn" id="pro-hvac" data-type="hvac">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Symbol_Air_conditioner.svg" alt="HVAC" class="pro-icon" style="width: 24px; height: 24px; margin-bottom: 4px;">
-                                HVAC
-                            </button>
+                                <button type="button" class="pro-btn" id="pro-hvac" data-type="hvac">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/29/Symbol_Air_conditioner.svg"
+                                        alt="HVAC" class="pro-icon"
+                                        style="width: 24px; height: 24px; margin-bottom: 4px;">
+                                    HVAC
+                                </button>
 
-                            <button type="button" class="pro-btn" id="pro-electrician" data-type="electrician">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Map_icons_by_Scott_de_Jonge_-_electrician.svg" alt="Electrician" class="pro-icon" style="width: 24px; height: 24px; margin-bottom: 4px;">
-                                Electrician
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="description">Problem Description</label>
-                        <textarea id="description" name="description" placeholder="Describe your issue..."
-                            required></textarea>
-
-                        <div class="pill-wrapper" id="pill-wrapper"
-                            style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
-                            <!-- Pills are dynamically rendered by JS based on professional type -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- STEP 2: Optional Image Upload -->
-                <div class="step-content" id="step-panel-2">
-                    <div class="form-group">
-                        <label>Attach Photo (Optional)</label>
-                        <div class="file-upload-wrapper">
-                            <input type="file" id="image" name="image" accept="image/*">
-                            <div class="file-upload-text">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                                <span>Upload Image File</span>
+                                <button type="button" class="pro-btn" id="pro-electrician" data-type="electrician">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Map_icons_by_Scott_de_Jonge_-_electrician.svg"
+                                        alt="Electrician" class="pro-icon"
+                                        style="width: 24px; height: 24px; margin-bottom: 4px;">
+                                    Electrician
+                                </button>
                             </div>
                         </div>
-                        <div id="file-preview" style="display: none;">File selected</div>
 
-                        <!-- Premium Live Preview -->
-                        <div class="preview-container" id="preview-container">
-                            <div class="preview-overlay"></div>
-                            <button type="button" class="remove-preview-btn" id="remove-preview-btn"
-                                title="Remove Photo">&times;</button>
-                            <img id="live-image-preview" src="" alt="Incident Preview">
-                        </div>
-                    </div>
-                </div>
+                        <div class="form-group">
+                            <label for="description">Problem Description</label>
+                            <textarea id="description" name="description" placeholder="Describe your issue..."
+                                required></textarea>
 
-                <!-- STEP 3: Contact Details -->
-                <div class="step-content" id="step-panel-3">
-                    <div class="form-group">
-                        <label for="customer_name">Your Name</label>
-                        <div class="input-wrapper">
-                            <div class="input-icon">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
+                            <div class="pill-wrapper" id="pill-wrapper"
+                                style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                                <!-- Pills are dynamically rendered by JS based on professional type -->
                             </div>
-                            <input type="text" id="customer_name" name="customer_name" placeholder="e.g. John Doe"
-                                required>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="phone">Phone Number</label>
-                        <div class="input-wrapper">
-                            <div class="input-icon"
-                                style="color: var(--text-secondary); font-weight: 600; font-size: 16px; left: 1.1rem;">
-                                +
+                    <!-- STEP 2: Optional Image Upload -->
+                    <div class="step-content" id="step-panel-2">
+                        <div class="form-group">
+                            <label>Attach Photo (Optional)</label>
+                            <div class="file-upload-wrapper">
+                                <input type="file" id="image" name="image" accept="image/*">
+                                <div class="file-upload-text">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    <span>Upload Image File</span>
+                                </div>
                             </div>
-                            <input type="tel" id="phone" name="phone" placeholder="1 613 555 0143"
-                                style="padding-left: 2.2rem;" required>
-                        </div>
+                            <div id="file-preview" style="display: none;">File selected</div>
 
-                        <div id="phone-hint"
-                            style="color: var(--text-secondary); font-size: 12px; margin-top: 6px; display: block; font-weight: 400; padding-left: 4px;">
-                            Enter country code + phone number.
-                        </div>
-                        <div id="phone-error"
-                            style="color: var(--error); font-size: 13px; margin-top: 6px; display: none; font-weight: 500;">
-                            ❌ Invalid Number format.
+                            <!-- Premium Live Preview -->
+                            <div class="preview-container" id="preview-container">
+                                <div class="preview-overlay"></div>
+                                <button type="button" class="remove-preview-btn" id="remove-preview-btn"
+                                    title="Remove Photo">&times;</button>
+                                <img id="live-image-preview" src="" alt="Incident Preview">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="location">Emergency Address / Location</label>
-                        <div class="autocomplete-wrapper">
+                    <!-- STEP 3: Contact Details -->
+                    <div class="step-content" id="step-panel-3">
+                        <div class="form-group">
+                            <label for="customer_name">Your Name</label>
                             <div class="input-wrapper">
                                 <div class="input-icon">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                        <circle cx="12" cy="10" r="3"></circle>
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
                                     </svg>
                                 </div>
-                                <input type="text" id="location" name="location"
-                                    placeholder="Street name, apartment unit, city..." required autocomplete="off">
+                                <input type="text" id="customer_name" name="customer_name" placeholder="e.g. John Doe"
+                                    required>
                             </div>
-                            <ul id="address-suggestions" class="address-suggestions" role="listbox" aria-label="Address suggestions"></ul>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <div class="input-wrapper">
+                                <div class="input-icon"
+                                    style="color: var(--text-secondary); font-weight: 600; font-size: 16px; left: 1.1rem;">
+                                    +
+                                </div>
+                                <input type="tel" id="phone" name="phone" placeholder="1 613 555 0143"
+                                    style="padding-left: 2.2rem;" required>
+                            </div>
+
+                            <div id="phone-hint"
+                                style="color: var(--text-secondary); font-size: 12px; margin-top: 6px; display: block; font-weight: 400; padding-left: 4px;">
+                                Enter country code + phone number.
+                            </div>
+                            <div id="phone-error"
+                                style="color: var(--error); font-size: 13px; margin-top: 6px; display: none; font-weight: 500;">
+                                ❌ Invalid Number format.
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="location">Emergency Address / Location</label>
+                            <div class="autocomplete-wrapper">
+                                <div class="input-wrapper">
+                                    <div class="input-icon">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                            <circle cx="12" cy="10" r="3"></circle>
+                                        </svg>
+                                    </div>
+                                    <input type="text" id="location" name="location"
+                                        placeholder="Street name, apartment unit, city..." required autocomplete="off">
+                                </div>
+                                <ul id="address-suggestions" class="address-suggestions" role="listbox"
+                                    aria-label="Address suggestions"></ul>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Step Navigation Controls -->
-                <div class="wizard-actions">
-                    <button type="button" class="btn-back" id="btn-back" style="display: none;">Back</button>
-                    <button type="button" class="btn-next" id="btn-next">Next</button>
-                    <button type="submit" class="btn-submit" id="submit-btn" style="display: none;">
-                        <span>Send Request</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                        </svg>
-                    </button>
-                </div>
-            </form>
+                    <!-- Step Navigation Controls -->
+                    <div class="wizard-actions">
+                        <button type="button" class="btn-back" id="btn-back" style="display: none;">Back</button>
+                        <button type="button" class="btn-next" id="btn-next">Next</button>
+                        <button type="submit" class="btn-submit" id="submit-btn" style="display: none;">
+                            <span>Send Request</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <div class="mode-panel is-active" id="voice-mode-panel">
@@ -196,7 +205,8 @@
                     <div class="header voice-header">
                         <div class="eyebrow">Speak naturally, we’ll capture the details.</div>
                         <h1>Live voice intake</h1>
-                        <p class="subtitle">Use this mode for a real-time call with the agent while the transcript stays visible to you.</p>
+                        <p class="subtitle">Use this mode for a real-time call with the agent while the transcript stays
+                            visible to you.</p>
                     </div>
 
                     <div class="voice-status-row">
@@ -214,7 +224,8 @@
                         </div>
                     </div>
 
-                    <button type="button" id="call-agent-btn" class="fancy call-agent-btn" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; background: transparent; color: #111827; border: 2px solid #000; border-radius: 0; padding: 0.9rem 1.25rem; font-weight: 700; cursor: pointer; box-shadow: none; position: relative;">
+                    <button type="button" id="call-agent-btn" class="fancy call-agent-btn"
+                        style="display:inline-flex; align-items:center; justify-content:center; gap:8px; background: transparent; color: #111827; border: 2px solid #000; border-radius: 0; padding: 0.9rem 1.25rem; font-weight: 700; cursor: pointer; box-shadow: none; position: relative;">
                         <span class="top-key"></span>
                         <span class="bottom-key-1"></span>
                         <span class="bottom-key-2"></span>
@@ -295,10 +306,29 @@
             });
         }
 
-        // Tracks how many items from the cumulative transcript we've already rendered.
-        // The Retell SDK v3 `update` event re-sends the full transcript array on every
-        // utterance change, so we diff against this counter to avoid duplicates.
+        // ── Transcript state ─────────────────────────────────────────────
+        // renderedTranscriptCount: how many completed turns have been appended.
+        // lastLiveLine: the DOM element for the current in-progress (streaming) turn,
+        //   so we can update it in-place instead of appending a new element each tick.
         let renderedTranscriptCount = 0;
+        let lastLiveLine = null;
+        let lastLiveRole = null;
+
+        function clearTranscriptForNewCall() {
+            if (!voiceTranscript) return;
+            voiceTranscript.innerHTML = '';
+            renderedTranscriptCount = 0;
+            lastLiveLine = null;
+            lastLiveRole = null;
+            // Show a subtle "connected" status so the panel is not blank
+            const status = document.createElement('div');
+            status.className = 'voice-line system';
+            status.innerHTML = `
+                <div class="voice-line-meta">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · System</div>
+                <div class="voice-line-text" style="opacity:0.6; font-style:italic;">Call connected — agent will speak shortly…</div>
+            `;
+            voiceTranscript.appendChild(status);
+        }
 
         function normalizeRetellTranscriptItems(payload) {
             if (!payload) return [];
@@ -328,38 +358,75 @@
             return [];
         }
 
+        function normalizeRole(raw) {
+            const r = String(raw || 'system').toLowerCase();
+            return r === 'agent' || r === 'assistant' || r === 'ai' ? 'agent'
+                 : r === 'user' || r === 'customer' || r === 'human' ? 'user'
+                 : 'system';
+        }
+
         function handleRetellTranscriptPayload(payload, isCumulative = false) {
             const items = normalizeRetellTranscriptItems(payload);
             if (!items.length) return;
 
             if (isCumulative) {
-                // Only render items we haven't shown yet
-                const newItems = items.slice(renderedTranscriptCount);
-                newItems.forEach((item) => {
-                    if (!item) return;
-                    const role = String(item.role || item.speaker || item.type || 'system').toLowerCase();
-                    const text = item.content || item.text || item.message || item.transcript || item.delta || '';
-                    if (typeof text === 'string' && text.trim()) {
-                        appendVoiceLine(
-                            role === 'agent' || role === 'assistant' || role === 'ai' ? 'agent' :
-                            role === 'user' || role === 'customer' || role === 'human' ? 'user' : 'system',
-                            text
-                        );
+                // Items 0..(renderedTranscriptCount-1) are already fully rendered.
+                // The item at renderedTranscriptCount-1 might still be streaming
+                // (lastLiveLine). Items beyond renderedTranscriptCount are new turns.
+
+                const lastIdx = items.length - 1;
+                const lastItem = items[lastIdx];
+                const lastRole = normalizeRole(lastItem?.role || lastItem?.speaker || lastItem?.type);
+                const lastText = (lastItem?.content || lastItem?.text || lastItem?.message || lastItem?.delta || '').trim();
+
+                // Append any fully-completed turns we haven't rendered yet
+                // (everything before the last item, beyond our cursor)
+                const completedUpTo = lastIdx; // last item may still be streaming
+                for (let i = renderedTranscriptCount; i < completedUpTo; i++) {
+                    const item = items[i];
+                    if (!item) continue;
+                    const role = normalizeRole(item.role || item.speaker || item.type);
+                    const text = (item.content || item.text || item.message || item.delta || '').trim();
+                    if (text) {
+                        // If the previous live line was for this same index, finalize it
+                        if (lastLiveLine && i === renderedTranscriptCount) {
+                            lastLiveLine.querySelector('.voice-line-text').textContent = text;
+                            lastLiveLine = null;
+                            lastLiveRole = null;
+                        } else {
+                            appendVoiceLine(role, text);
+                        }
                     }
-                });
-                renderedTranscriptCount = items.length;
+                    renderedTranscriptCount = i + 1;
+                }
+
+                // Handle the last (possibly still-streaming) item
+                if (lastText) {
+                    if (lastLiveLine && lastLiveRole === lastRole && lastIdx === renderedTranscriptCount) {
+                        // Update the existing live bubble in-place
+                        lastLiveLine.querySelector('.voice-line-text').textContent = lastText;
+                    } else {
+                        // New turn — finalize any previous live line first
+                        if (lastLiveLine) {
+                            lastLiveLine = null;
+                            lastLiveRole = null;
+                        }
+                        if (lastIdx >= renderedTranscriptCount) {
+                            appendVoiceLine(lastRole, lastText);
+                            // Keep a reference so we can update it in future ticks
+                            const lines = voiceTranscript.querySelectorAll('.voice-line');
+                            lastLiveLine = lines[lines.length - 1];
+                            lastLiveRole = lastRole;
+                        }
+                    }
+                }
             } else {
+                // Non-cumulative (e.g. metadata): just append each item once
                 items.forEach((item) => {
                     if (!item) return;
-                    const role = String(item.role || item.speaker || item.type || 'system').toLowerCase();
-                    const text = item.content || item.text || item.message || item.transcript || item.delta || '';
-                    if (typeof text === 'string' && text.trim()) {
-                        appendVoiceLine(
-                            role === 'agent' || role === 'assistant' || role === 'ai' ? 'agent' :
-                            role === 'user' || role === 'customer' || role === 'human' ? 'user' : 'system',
-                            text
-                        );
-                    }
+                    const role = normalizeRole(item.role || item.speaker || item.type);
+                    const text = (item.content || item.text || item.message || item.transcript || item.delta || '').trim();
+                    if (text) appendVoiceLine(role, text);
                 });
             }
         }
@@ -428,7 +495,7 @@
 
                 retellWebClient.on('call_started', () => {
                     isCallActive = true;
-                    renderedTranscriptCount = 0; // reset cursor for each new call
+                    clearTranscriptForNewCall(); // clears placeholder + resets state
                     callAgentBtn.disabled = false;
                     callAgentBtn.classList.add('is-active');
                     updateCallButtonLabel('🔴 End Call');
@@ -485,65 +552,65 @@
         // ─── Professional Type Selector ───────────────────────────────────
         let selectedProfessional = 'plumber';
 
-       const SUGGEST_PILLS = {
-    plumber: [
-        { 
-            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="lightblue" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-13-7-13S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>`, 
-            label: 'Burst Pipe', 
-            text: 'Burst pipe under sink gushing hot water and kitchen flooded' 
-        },
-        { 
-            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="blue" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-13-7-13S5 10.7 5 15a7 7 0 0 0 7 7z"/><path d="M12 18a4 4 0 0 0 4-4" stroke-dasharray="2 2"/></svg>`,
-            label: 'Faucet Drip', 
-            text: 'Kitchen faucet leaking from handles with a steady slow drip' 
-        },
-    ],
-    hvac: [
-        { 
-            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`, 
-            label: 'No Heat', 
-            text: 'Furnace not igniting and home temperature dropping fast' 
-        },
-        { 
-            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`, 
-            label: 'Loud Noise', 
-            text: 'HVAC system making loud grinding or banging noise on startup' 
-        },
-    ],
-    electrician: [
-        { 
-            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`, 
-            label: 'Sparking Outlet', 
-            text: 'Electrical outlet sparking and burning smell coming from wall' 
-        },
-        { 
-            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M18.36 6.64a9 9 0 0 1 0 12.73m-12.72 0a9 9 0 0 1 0-12.73M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>`,
-            label: 'Power Outage', 
-            text: 'Partial power outage in specific rooms, breaker keeps tripping' 
-        },
-    ]
+        const SUGGEST_PILLS = {
+            plumber: [
+                {
+                    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="lightblue" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-13-7-13S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>`,
+                    label: 'Burst Pipe',
+                    text: 'Burst pipe under sink gushing hot water and kitchen flooded'
+                },
+                {
+                    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="blue" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-13-7-13S5 10.7 5 15a7 7 0 0 0 7 7z"/><path d="M12 18a4 4 0 0 0 4-4" stroke-dasharray="2 2"/></svg>`,
+                    label: 'Faucet Drip',
+                    text: 'Kitchen faucet leaking from handles with a steady slow drip'
+                },
+            ],
+            hvac: [
+                {
+                    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+                    label: 'No Heat',
+                    text: 'Furnace not igniting and home temperature dropping fast'
+                },
+                {
+                    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+                    label: 'Loud Noise',
+                    text: 'HVAC system making loud grinding or banging noise on startup'
+                },
+            ],
+            electrician: [
+                {
+                    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="orange" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+                    label: 'Sparking Outlet',
+                    text: 'Electrical outlet sparking and burning smell coming from wall'
+                },
+                {
+                    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><path d="M18.36 6.64a9 9 0 0 1 0 12.73m-12.72 0a9 9 0 0 1 0-12.73M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>`,
+                    label: 'Power Outage',
+                    text: 'Partial power outage in specific rooms, breaker keeps tripping'
+                },
+            ]
         };
 
-       function renderPills(type) {
-        const wrapper = document.getElementById('pill-wrapper');
-        wrapper.innerHTML = '';
-        SUGGEST_PILLS[type].forEach(pill => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'suggest-pill';
-            btn.style.cssText = 'flex: 1 1 calc(33.333% - 8px); min-width: 140px; display: inline-flex; align-items: center; gap: 6px; justify-content: center;';
-            btn.setAttribute('data-text', pill.text);
-            
-            // FIX: Changed from textContent to innerHTML, and emoji to icon
-            btn.innerHTML = `${pill.icon} <span>${pill.label}</span>`;
-            
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.getElementById('description').value = this.getAttribute('data-text');
+        function renderPills(type) {
+            const wrapper = document.getElementById('pill-wrapper');
+            wrapper.innerHTML = '';
+            SUGGEST_PILLS[type].forEach(pill => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'suggest-pill';
+                btn.style.cssText = 'flex: 1 1 calc(33.333% - 8px); min-width: 140px; display: inline-flex; align-items: center; gap: 6px; justify-content: center;';
+                btn.setAttribute('data-text', pill.text);
+
+                // FIX: Changed from textContent to innerHTML, and emoji to icon
+                btn.innerHTML = `${pill.icon} <span>${pill.label}</span>`;
+
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.getElementById('description').value = this.getAttribute('data-text');
+                });
+                wrapper.appendChild(btn);
             });
-            wrapper.appendChild(btn);
-        });
-    }
+        }
         // Wire up professional type buttons
         document.querySelectorAll('.pro-btn').forEach(btn => {
             btn.addEventListener('click', function () {
