@@ -803,7 +803,11 @@
 
                 const retellConfig = await getRetellConfig();
                 const configuredAgentId = retellConfig.agentId || 'agent_d9f85d3df4926cf8890265a975';
-                const payload = { contractor_id: contractorId, agent_id: configuredAgentId };
+                const payload = {
+                    contractor_id: contractorId,
+                    agent_id: configuredAgentId,
+                    transcript: true
+                };
                 const res = await fetch(`/retell/start-call?id=${encodeURIComponent(contractorId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
