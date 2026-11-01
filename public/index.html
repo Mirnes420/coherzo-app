@@ -289,23 +289,54 @@
                 <div class="voice-line-text">${escapeHtml(content)}</div>
             `;
             voiceTranscript.appendChild(line);
-            voiceTranscript.scrollTop = voiceTranscript.scrollHeight;
+            voiceTranscript.scrollTo({
+                top: voiceTranscript.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        function normalizeRetellTranscriptItems(payload) {
+            if (!payload) return [];
+
+            if (Array.isArray(payload)) return payload;
+
+            const collections = [
+                payload.transcript,
+                payload.transcripts,
+                payload.utterances,
+                payload.messages,
+                payload.items,
+                payload.data?.transcript,
+                payload.data?.transcripts,
+                payload.data?.utterances,
+            ];
+
+            for (const collection of collections) {
+                if (Array.isArray(collection)) return collection;
+            }
+
+            const directText = payload.content || payload.text || payload.message || payload.transcript || payload.delta;
+            if (typeof directText === 'string' && directText.trim()) {
+                return [payload];
+            }
+
+            return [];
         }
 
         function handleRetellTranscriptPayload(payload) {
-            const items = Array.isArray(payload) ? payload :
-                Array.isArray(payload?.transcripts) ? payload.transcripts :
-                Array.isArray(payload?.utterances) ? payload.utterances :
-                [];
-
+            const items = normalizeRetellTranscriptItems(payload);
             if (!items.length) return;
 
             items.forEach((item) => {
                 if (!item) return;
                 const role = String(item.role || item.speaker || item.type || 'system').toLowerCase();
-                const text = item.content || item.text || item.message || item.transcript || '';
-                if (text) {
-                    appendVoiceLine(role === 'agent' || role === 'assistant' ? 'agent' : role === 'user' || role === 'customer' ? 'user' : 'system', text);
+                const text = item.content || item.text || item.message || item.transcript || item.delta || '';
+                if (typeof text === 'string' && text.trim()) {
+                    appendVoiceLine(
+                        role === 'agent' || role === 'assistant' || role === 'ai' ? 'agent' :
+                        role === 'user' || role === 'customer' || role === 'human' ? 'user' : 'system',
+                        text
+                    );
                 }
             });
         }
@@ -384,6 +415,10 @@
                 retellWebClient.on('call_ended', () => {
                     resetCallButtonState();
                     showToast('Retell call ended');
+                });
+
+                retellWebClient.on('transcript', (payload) => {
+                    handleRetellTranscriptPayload(payload);
                 });
 
                 retellWebClient.on('update', (payload) => {
