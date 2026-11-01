@@ -295,6 +295,11 @@
             });
         }
 
+        // Tracks how many items from the cumulative transcript we've already rendered.
+        // The Retell SDK v3 `update` event re-sends the full transcript array on every
+        // utterance change, so we diff against this counter to avoid duplicates.
+        let renderedTranscriptCount = 0;
+
         function normalizeRetellTranscriptItems(payload) {
             if (!payload) return [];
 
@@ -323,22 +328,40 @@
             return [];
         }
 
-        function handleRetellTranscriptPayload(payload) {
+        function handleRetellTranscriptPayload(payload, isCumulative = false) {
             const items = normalizeRetellTranscriptItems(payload);
             if (!items.length) return;
 
-            items.forEach((item) => {
-                if (!item) return;
-                const role = String(item.role || item.speaker || item.type || 'system').toLowerCase();
-                const text = item.content || item.text || item.message || item.transcript || item.delta || '';
-                if (typeof text === 'string' && text.trim()) {
-                    appendVoiceLine(
-                        role === 'agent' || role === 'assistant' || role === 'ai' ? 'agent' :
-                        role === 'user' || role === 'customer' || role === 'human' ? 'user' : 'system',
-                        text
-                    );
-                }
-            });
+            if (isCumulative) {
+                // Only render items we haven't shown yet
+                const newItems = items.slice(renderedTranscriptCount);
+                newItems.forEach((item) => {
+                    if (!item) return;
+                    const role = String(item.role || item.speaker || item.type || 'system').toLowerCase();
+                    const text = item.content || item.text || item.message || item.transcript || item.delta || '';
+                    if (typeof text === 'string' && text.trim()) {
+                        appendVoiceLine(
+                            role === 'agent' || role === 'assistant' || role === 'ai' ? 'agent' :
+                            role === 'user' || role === 'customer' || role === 'human' ? 'user' : 'system',
+                            text
+                        );
+                    }
+                });
+                renderedTranscriptCount = items.length;
+            } else {
+                items.forEach((item) => {
+                    if (!item) return;
+                    const role = String(item.role || item.speaker || item.type || 'system').toLowerCase();
+                    const text = item.content || item.text || item.message || item.transcript || item.delta || '';
+                    if (typeof text === 'string' && text.trim()) {
+                        appendVoiceLine(
+                            role === 'agent' || role === 'assistant' || role === 'ai' ? 'agent' :
+                            role === 'user' || role === 'customer' || role === 'human' ? 'user' : 'system',
+                            text
+                        );
+                    }
+                });
+            }
         }
 
         let retellWebClient = null;
@@ -405,6 +428,7 @@
 
                 retellWebClient.on('call_started', () => {
                     isCallActive = true;
+                    renderedTranscriptCount = 0; // reset cursor for each new call
                     callAgentBtn.disabled = false;
                     callAgentBtn.classList.add('is-active');
                     updateCallButtonLabel('🔴 End Call');
@@ -417,16 +441,19 @@
                     showToast('Retell call ended');
                 });
 
-                retellWebClient.on('transcript', (payload) => {
-                    handleRetellTranscriptPayload(payload);
+                // `update` sends the full cumulative transcript array each time.
+                // Pass isCumulative=true so we only render new items.
+                retellWebClient.on('update', (payload) => {
+                    handleRetellTranscriptPayload(payload, true);
                 });
 
-                retellWebClient.on('update', (payload) => {
-                    handleRetellTranscriptPayload(payload);
+                // `transcript` may also be a cumulative array — treat the same way.
+                retellWebClient.on('transcript', (payload) => {
+                    handleRetellTranscriptPayload(payload, true);
                 });
 
                 retellWebClient.on('metadata', (payload) => {
-                    handleRetellTranscriptPayload(payload);
+                    handleRetellTranscriptPayload(payload, false);
                 });
 
                 retellWebClient.on('error', (error) => {
