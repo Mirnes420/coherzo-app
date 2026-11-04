@@ -360,116 +360,167 @@ color: var(--bg-color);
 }
 
 .voice-status-dot {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: #22c55e;
-    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.12);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+    animation: pulse-dot 2s ease-in-out infinite;
 }
 
+@keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18); }
+    50%       { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0.06); }
+}
+
+/* ── Transcript panel shell ─────────────────────────────── */
 .voice-transcript-panel {
-    border: 1px solid rgba(17, 24, 39, 0.08);
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(249,250,251,0.9));
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
     overflow: hidden;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    background: #0f1117;
+    box-shadow: 0 2px 40px rgba(0, 0, 0, 0.13), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 .voice-transcript-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.8rem 0.9rem;
-    border-bottom: 1px solid var(--border-color);
-    font-size: 0.72rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    color: rgba(255,255,255,0.45);
 }
 
 .voice-live-tag {
-    background: rgba(34, 197, 94, 0.12);
-    color: #15803d;
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
     border-radius: 999px;
-    padding: 0.3rem 0.5rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.07em;
+    font-weight: 800;
 }
 
+/* ── Scrollable stream ──────────────────────────────────── */
 .voice-transcript-stream {
-    min-height: 220px;
-    max-height: 300px;
+    min-height: 240px;
+    max-height: 320px;
     overflow-y: auto;
+    /* CSS overflow-anchor keeps scroll pinned to bottom automatically */
     overflow-anchor: auto;
-    padding: 0.9rem 0.9rem 1.3rem;
+    padding: 1rem 0.9rem 1.2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+    gap: 0.55rem;
+    background: transparent;
     scroll-behavior: smooth;
-    scroll-padding-bottom: 16px;
+}
+
+/* Slim scrollbar on dark background */
+.voice-transcript-stream::-webkit-scrollbar { width: 4px; }
+.voice-transcript-stream::-webkit-scrollbar-track { background: transparent; }
+.voice-transcript-stream::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+    border-radius: 99px;
+}
+.voice-transcript-stream::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+/* ── Scroll anchor (keeps newest message pinned) ─────────── */
+.voice-transcript-stream::after {
+    content: '';
+    overflow-anchor: auto;
+    height: 0;
+    display: block;
+    flex-shrink: 0;
+}
+
+/* ── Base bubble ─────────────────────────────────────────── */
+@keyframes bubble-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .voice-line {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.22rem;
     width: fit-content;
-    max-width: 84%;
-    padding: 0.7rem 0.8rem 0.75rem;
-    border-radius: 14px 14px 14px 6px;
-    background: #f3f4f6;
-    margin-bottom: 0.1rem;
-    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02), 0 8px 18px rgba(17, 24, 39, 0.03);
+    max-width: 82%;
+    padding: 0.65rem 0.9rem 0.7rem;
+    border-radius: 16px 16px 16px 5px;
+    animation: bubble-in 0.18s ease-out both;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
 
+/* Agent — left-aligned, violet tint */
 .voice-line.agent {
     align-self: flex-start;
-    background: #f4f1ff;
-    border-bottom-left-radius: 6px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #1a1535 100%);
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-bottom-left-radius: 5px;
 }
 
+/* User — right-aligned, teal tint */
 .voice-line.user {
     align-self: flex-end;
-    background: #ecfdf5;
-    border-radius: 14px 14px 6px 14px;
+    background: linear-gradient(135deg, #052e16 0%, #0a2e1f 100%);
+    border: 1px solid rgba(34, 197, 94, 0.22);
+    border-radius: 16px 16px 5px 16px;
 }
 
+/* System — centered pill */
 .voice-line.system {
     align-self: center;
-    width: auto;
-    max-width: 92%;
-    background: #f8fafc;
+    max-width: 90%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
     border-radius: 999px;
-    padding: 0.55rem 0.8rem;
-    color: var(--text-secondary);
+    padding: 0.4rem 0.9rem;
     box-shadow: none;
 }
 
 .voice-line-meta {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: 700;
-    color: var(--text-secondary);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    opacity: 0.8;
+    opacity: 0.55;
 }
 
+.voice-line.agent .voice-line-meta { color: #a78bfa; }
+.voice-line.user  .voice-line-meta { color: #4ade80; }
+.voice-line.system .voice-line-meta { color: rgba(255,255,255,0.4); }
+
 .voice-line-text {
-    font-size: 0.9rem;
-    line-height: 1.55;
-    color: var(--text-primary);
+    font-size: 0.88rem;
+    line-height: 1.58;
     white-space: pre-wrap;
     word-break: break-word;
+    color: rgba(255,255,255,0.9);
+}
+
+.voice-line.system .voice-line-text {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.45);
+    font-style: italic;
 }
 
 .voice-transcript-stream .empty-state {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 180px;
-    color: var(--text-secondary);
+    min-height: 200px;
+    color: rgba(255,255,255,0.25);
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
+    font-style: italic;
 }
 
 .call-agent-btn {

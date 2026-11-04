@@ -513,32 +513,48 @@
             updateCallButtonLabel('📞 Start a call');
         }
 
-        // ─── Retell SDK v3 client setup ────────────────────────────────────
-        function debugLogToPanel(eventName, payload) {
-            if (!voiceTranscript) return;
-            const el = document.createElement('div');
-            el.style.cssText = 'font-size:10px;color:#f59e0b;background:#1a1200;padding:4px 8px;border-radius:4px;margin:2px 0;font-family:monospace;word-break:break-all;';
-            let preview;
-            try { preview = JSON.stringify(payload).slice(0, 300); } catch { preview = String(payload); }
-            el.textContent = `[${eventName}] ${preview}`;
-            voiceTranscript.appendChild(el);
-            voiceTranscript.scrollTop = voiceTranscript.scrollHeight;
-        }
-
+        // ─── Retell transcript renderer ─────────────────────────────────────
+        // Diffs the existing DOM against the latest cumulative transcript array.
+        // Only appends new turns or updates the last bubble in-place (streaming).
+        // Never wipes the container, so there is no flicker.
         function renderRetellTranscript(transcript) {
             if (!Array.isArray(transcript) || !voiceTranscript) return;
-            const utterances = transcript.filter((item) => item && (item.role === 'agent' || item.role === 'user') && typeof item.content === 'string' && item.content.trim());
-            if (!utterances.length) return;
-            voiceTranscript.innerHTML = '';
-            utterances.forEach((item) => appendVoiceLine(item.role, item.content));
-        }
 
-        async function getRetellWebClient() {
-            if (!retellWebClient) {
-                const { RetellClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk@3/+esm');
-                retellWebClient = new RetellClient();
+            // Filter to only agent/user turns with text
+            const utterances = transcript.filter(
+                (item) => item && (item.role === 'agent' || item.role === 'user')
+                       && typeof item.content === 'string' && item.content.trim()
+            );
+            if (!utterances.length) return;
+
+            // Count existing real conversation bubbles (exclude .system lines)
+            const existingBubbles = Array.from(
+                voiceTranscript.querySelectorAll('.voice-line.agent, .voice-line.user')
+            );
+
+            // Append any newly-completed turns beyond what's already rendered
+            for (let i = existingBubbles.length; i < utterances.length - 1; i++) {
+                appendVoiceLine(utterances[i].role, utterances[i].content);
             }
-            return retellWebClient;
+
+            // Handle the last (potentially still-streaming) utterance
+            const last = utterances[utterances.length - 1];
+            const allBubbles = Array.from(
+                voiceTranscript.querySelectorAll('.voice-line.agent, .voice-line.user')
+            );
+            const lastBubble = allBubbles[allBubbles.length - 1];
+
+            if (utterances.length > existingBubbles.length) {
+                // Entirely new turn — append it
+                appendVoiceLine(last.role, last.content);
+            } else if (lastBubble) {
+                // Same turn still streaming — update in-place
+                const textEl = lastBubble.querySelector('.voice-line-text');
+                if (textEl && textEl.textContent !== last.content) {
+                    textEl.textContent = last.content;
+                    scrollTranscriptToBottom({ smooth: false });
+                }
+            }
         }
 
         const portalCard = document.getElementById('portal-card');
@@ -920,31 +936,28 @@
                     },
                     hooks: {
                         onStatus: (status) => {
-                            debugLogToPanel('status', { status });
+                            console.log('[Retell] status:', status);
                             if (status === 'live') {
                                 isCallActive = true;
                                 callAgentBtn.disabled = false;
                                 callAgentBtn.classList.add('is-active');
                                 updateCallButtonLabel('🔴 End Call');
                                 setActiveMode('voice');
-                                showToast('Retell agent connected');
+                                showToast('Agent connected');
                             }
                         },
                         onTranscript: (transcript) => {
-                            debugLogToPanel('transcript', transcript);
                             renderRetellTranscript(transcript);
                         },
-                        onEnd: (event) => {
-                            debugLogToPanel('end', event);
-                            appendSystemLine('Call ended normally.');
+                        onEnd: () => {
+                            // Silently reset — don't pollute the transcript
                             resetCallButtonState();
-                            showToast('Call ended normally');
+                            showToast('Call ended');
                         },
                         onError: (error) => {
-                            debugLogToPanel('error', error);
-                            console.error('Retell call error:', error);
+                            console.error('[Retell] error:', error);
                             resetCallButtonState();
-                            showToast('Retell call error', 'error');
+                            showToast('Call error — please retry', 'error');
                         }
                     }
                 });
