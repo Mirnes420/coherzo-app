@@ -101,7 +101,7 @@ app.post('/retell/start-call', async (req, res) => {
         // 1. Extract path segments and query directly from Express's req object
         const fullUrl = req.originalUrl || req.url; // e.g. "/retell/start-call/id=2" or "/retell/start-call?id=2"
         const pathSegments = fullUrl.split('?')[0].split('/').filter(Boolean);
-        
+
         let contractorId = body.contractor_id || null;
 
         // 2. Check path segments (e.g., /id=2 or /2)
@@ -117,8 +117,10 @@ app.post('/retell/start-call', async (req, res) => {
             contractorId = req.query?.id || req.query?.contractor_id;
         }
 
-        // 4. Default fallback integer ID
-        contractorId = contractorId || '1';
+        // 4. Normalize plumber_01 / contractor_2 / id=2 to the numeric contractor ID.
+        contractorId = String(contractorId || '1').trim();
+        const numericMatch = contractorId.match(/\d+/);
+        contractorId = numericMatch ? numericMatch[0] : contractorId || '1';
 
         if (process.env.RETELL_AGENT_ID && body.agent_id && body.agent_id !== process.env.RETELL_AGENT_ID) {
             console.warn(`Ignoring stale Retell agent_id=${body.agent_id}; using configured env agent_id=${process.env.RETELL_AGENT_ID}`);

@@ -919,6 +919,10 @@
                     contractorId = urlParams.get('id') || urlParams.get('contractor_id') || '1';
                 }
 
+                contractorId = String(contractorId || '1').trim();
+                const numericMatch = contractorId.match(/\d+/);
+                if (numericMatch) contractorId = numericMatch[0];
+
                 const retellConfig = await getRetellConfig();
                 const configuredAgentId = retellConfig.agentId || 'agent_d9f85d3df4926cf8890265a975';
                 const publicKey = retellConfig.publicKey || '';
