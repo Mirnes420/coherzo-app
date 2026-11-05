@@ -393,66 +393,46 @@
             const items = normalizeRetellTranscriptItems(payload);
             if (!items.length) return;
 
-            if (isCumulative) {
-                // Items 0..(renderedTranscriptCount-1) are already fully rendered.
-                // The item at renderedTranscriptCount-1 might still be streaming
-                // (lastLiveLine). Items beyond renderedTranscriptCount are new turns.
+            const utterances = items
+                .map((item, index) => ({
+                    index,
+                    role: normalizeRole(item?.role || item?.speaker || item?.type),
+                    text: (item?.content || item?.text || item?.message || item?.transcript || item?.delta || '').trim(),
+                }))
+                .filter((item) => item.text && (item.role === 'agent' || item.role === 'user'));
 
-                const lastIdx = items.length - 1;
-                const lastItem = items[lastIdx];
-                const lastRole = normalizeRole(lastItem?.role || lastItem?.speaker || lastItem?.type);
-                const lastText = (lastItem?.content || lastItem?.text || lastItem?.message || lastItem?.delta || '').trim();
+            if (!utterances.length) return;
 
-                // Append any fully-completed turns we haven't rendered yet
-                // (everything before the last item, beyond our cursor)
-                const completedUpTo = lastIdx; // last item may still be streaming
-                for (let i = renderedTranscriptCount; i < completedUpTo; i++) {
-                    const item = items[i];
-                    if (!item) continue;
-                    const role = normalizeRole(item.role || item.speaker || item.type);
-                    const text = (item.content || item.text || item.message || item.delta || '').trim();
-                    if (text) {
-                        // If the previous live line was for this same index, finalize it
-                        if (lastLiveLine && i === renderedTranscriptCount) {
-                            lastLiveLine.querySelector('.voice-line-text').textContent = text;
-                            lastLiveLine = null;
-                            lastLiveRole = null;
-                        } else {
-                            appendVoiceLine(role, text);
-                        }
-                    }
-                    renderedTranscriptCount = i + 1;
-                }
+            const liveEntries = Array.from(voiceTranscript.querySelectorAll('.voice-line.agent, .voice-line.user'));
 
-                // Handle the last (possibly still-streaming) item
-                if (lastText) {
-                    if (lastLiveLine && lastLiveRole === lastRole && lastIdx === renderedTranscriptCount) {
-                        // Update the existing live bubble in-place
-                        lastLiveLine.querySelector('.voice-line-text').textContent = lastText;
-                    } else {
-                        // New turn — finalize any previous live line first
-                        if (lastLiveLine) {
-                            lastLiveLine = null;
-                            lastLiveRole = null;
-                        }
-                        if (lastIdx >= renderedTranscriptCount) {
-                            appendVoiceLine(lastRole, lastText);
-                            // Keep a reference so we can update it in future ticks
-                            const lines = voiceTranscript.querySelectorAll('.voice-line');
-                            lastLiveLine = lines[lines.length - 1];
-                            lastLiveRole = lastRole;
-                        }
+            utterances.forEach((item, idx) => {
+                const bubble = liveEntries[idx] || document.createElement('div');
+                if (!bubble.classList || !bubble.classList.contains('voice-line')) {
+                    bubble.className = `voice-line ${item.role}`;
+                    if (!bubble.parentNode) {
+                        voiceTranscript.appendChild(bubble);
                     }
                 }
-            } else {
-                // Non-cumulative (e.g. metadata): just append each item once
-                items.forEach((item) => {
-                    if (!item) return;
-                    const role = normalizeRole(item.role || item.speaker || item.type);
-                    const text = (item.content || item.text || item.message || item.transcript || item.delta || '').trim();
-                    if (text) appendVoiceLine(role, text);
-                });
+
+                bubble.className = `voice-line ${item.role}`;
+                const label = item.role === 'agent' ? 'Agent' : 'You';
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                bubble.innerHTML = `
+                    <div class="voice-line-meta">${time} · ${label}</div>
+                    <div class="voice-line-text">${escapeHtml(item.text)}</div>
+                `;
+
+                if (!bubble.parentNode) {
+                    voiceTranscript.appendChild(bubble);
+                }
+            });
+
+            while (liveEntries.length > utterances.length) {
+                const extra = liveEntries.pop();
+                if (extra && extra.parentNode) extra.remove();
             }
+
+            scrollTranscriptToBottom({ smooth: false });
         }
 
         let retellWebClient = null;
@@ -520,41 +500,46 @@
         function renderRetellTranscript(transcript) {
             if (!Array.isArray(transcript) || !voiceTranscript) return;
 
-            // Filter to only agent/user turns with text
-            const utterances = transcript.filter(
-                (item) => item && (item.role === 'agent' || item.role === 'user')
-                       && typeof item.content === 'string' && item.content.trim()
-            );
+            const utterances = transcript
+                .map((item, index) => ({
+                    index,
+                    role: normalizeRole(item?.role || item?.speaker || item?.type),
+                    text: (item?.content || item?.text || item?.message || item?.transcript || item?.delta || '').trim(),
+                }))
+                .filter((item) => item.text && (item.role === 'agent' || item.role === 'user'));
+
             if (!utterances.length) return;
 
-            // Count existing real conversation bubbles (exclude .system lines)
-            const existingBubbles = Array.from(
-                voiceTranscript.querySelectorAll('.voice-line.agent, .voice-line.user')
-            );
+            const liveEntries = Array.from(voiceTranscript.querySelectorAll('.voice-line.agent, .voice-line.user'));
 
-            // Append any newly-completed turns beyond what's already rendered
-            for (let i = existingBubbles.length; i < utterances.length - 1; i++) {
-                appendVoiceLine(utterances[i].role, utterances[i].content);
-            }
-
-            // Handle the last (potentially still-streaming) utterance
-            const last = utterances[utterances.length - 1];
-            const allBubbles = Array.from(
-                voiceTranscript.querySelectorAll('.voice-line.agent, .voice-line.user')
-            );
-            const lastBubble = allBubbles[allBubbles.length - 1];
-
-            if (utterances.length > existingBubbles.length) {
-                // Entirely new turn — append it
-                appendVoiceLine(last.role, last.content);
-            } else if (lastBubble) {
-                // Same turn still streaming — update in-place
-                const textEl = lastBubble.querySelector('.voice-line-text');
-                if (textEl && textEl.textContent !== last.content) {
-                    textEl.textContent = last.content;
-                    scrollTranscriptToBottom({ smooth: false });
+            utterances.forEach((item, idx) => {
+                const bubble = liveEntries[idx] || document.createElement('div');
+                if (!bubble.classList || !bubble.classList.contains('voice-line')) {
+                    bubble.className = `voice-line ${item.role}`;
+                    if (!bubble.parentNode) {
+                        voiceTranscript.appendChild(bubble);
+                    }
                 }
+
+                bubble.className = `voice-line ${item.role}`;
+                const label = item.role === 'agent' ? 'Agent' : 'You';
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                bubble.innerHTML = `
+                    <div class="voice-line-meta">${time} · ${label}</div>
+                    <div class="voice-line-text">${escapeHtml(item.text)}</div>
+                `;
+
+                if (!bubble.parentNode) {
+                    voiceTranscript.appendChild(bubble);
+                }
+            });
+
+            while (liveEntries.length > utterances.length) {
+                const extra = liveEntries.pop();
+                if (extra && extra.parentNode) extra.remove();
             }
+
+            scrollTranscriptToBottom({ smooth: false });
         }
 
         const portalCard = document.getElementById('portal-card');
@@ -956,7 +941,7 @@
                         onEnd: () => {
                             // Silently reset — don't pollute the transcript
                             resetCallButtonState();
-                            showToast('Call ended');
+                            showToast('Call ended normally');
                         },
                         onError: (error) => {
                             console.error('[Retell] error:', error);
