@@ -618,6 +618,48 @@ app.get('/retell/config', (req, res) => {
     });
 });
 
+app.get('/api/contractor', async (req, res) => {
+    try {
+        const contractorId = String(req.query.id || req.query.contractor_id || req.query.plumber_id || '').trim();
+        if (!contractorId) {
+            return res.status(400).json({ error: 'contractor_id is required' });
+        }
+
+        const pool = getDbPool();
+        if (!pool) {
+            return res.status(500).json({ error: 'database unavailable' });
+        }
+
+        const digitsOnly = contractorId.match(/\d+/)?.[0] || contractorId;
+        const result = await pool.query(
+            `SELECT id, name, business_name, contractor_phone, dispatcher_phone, email, language
+             FROM contractors
+             WHERE id = $1 OR id = $2 OR contractor_phone LIKE $3
+             ORDER BY CASE WHEN id = $1 THEN 0 WHEN id = $2 THEN 1 ELSE 2 END
+             LIMIT 1`,
+            [String(digitsOnly), String(contractorId), `%${digitsOnly}%`]
+        );
+
+        if (!result.rows.length) {
+            return res.status(404).json({ error: 'contractor not found' });
+        }
+
+        const contractor = result.rows[0];
+        return res.json({
+            contractor_id: contractor.id,
+            name: contractor.name || contractor.business_name || 'Unknown Contractor',
+            business_name: contractor.business_name || contractor.name || 'Unknown Business',
+            contractor_phone: contractor.contractor_phone || '',
+            dispatcher_phone: contractor.dispatcher_phone || '',
+            email: contractor.email || '',
+            language: contractor.language || 'English',
+        });
+    } catch (err) {
+        console.error('contractor lookup failed:', err);
+        return res.status(500).json({ error: 'contractor lookup failed' });
+    }
+});
+
 // Safe API endpoint to get the current QR code data (protected with password)
 app.get('/qr', (req, res) => {
     if (req.query.pwd !== 'Djemenadje') {

@@ -875,6 +875,21 @@
             }
         }
 
+        async function getContractorContext(contractorId) {
+            try {
+                const url = `/api/contractor?id=${encodeURIComponent(contractorId)}`;
+                const res = await fetch(url, { method: 'GET' });
+                if (!res.ok) {
+                    console.warn('No contractor metadata for', contractorId, res.status);
+                    return {};
+                }
+                return await res.json();
+            } catch (err) {
+                console.warn('Failed to load contractor context:', err);
+                return {};
+            }
+        }
+
         callAgentBtn.addEventListener('click', async () => {
             if (isCallActive && retellSession) {
                 try {
@@ -915,14 +930,24 @@
                     throw new Error('Retell public key is missing.');
                 }
 
+                const contractorContext = await getContractorContext(contractorId) || {};
+                const contractorVars = {
+                    contractor_id: contractorId,
+                    business_name: contractorContext.business_name || 'Unknown Business',
+                    company_name: contractorContext.business_name || 'Unknown Business',
+                    contractor_name: contractorContext.name || 'Unknown Contractor',
+                    contractor_phone: contractorContext.contractor_phone || '',
+                    dispatcher_phone: contractorContext.dispatcher_phone || '',
+                    email: contractorContext.email || '',
+                    language: contractorContext.language || 'English',
+                };
+
                 const { RetellClient } = await import('https://cdn.jsdelivr.net/npm/retell-client-js-sdk@3/+esm');
                 const client = new RetellClient({ key: publicKey });
                 retellSession = client.createWebCall({
                     agent_id: configuredAgentId,
                     transcript: true,
-                    retell_llm_dynamic_variables: {
-                        contractor_id: contractorId,
-                    },
+                    retell_llm_dynamic_variables: contractorVars,
                     hooks: {
                         onStatus: (status) => {
                             console.log('[Retell] status:', status);
