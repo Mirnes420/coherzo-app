@@ -721,17 +721,27 @@
             }
         });
 
-        function getPlumberId() {
+        function getContractorIdFromLocation() {
             const urlParams = new URLSearchParams(window.location.search);
-            let id = urlParams.get('plumber') || urlParams.get('id');
-            if (id) return id;
-
-            const pathParts = window.location.pathname.split('/');
-            const lastPart = pathParts[pathParts.length - 1];
-            if (lastPart.startsWith('id=')) {
-                return lastPart.split('=')[1];
+            const queryId = urlParams.get('contractor_id') || urlParams.get('plumber_id') || urlParams.get('id') || urlParams.get('plumber');
+            if (queryId) {
+                const numeric = String(queryId).match(/\d+/);
+                return numeric ? numeric[0] : String(queryId).trim();
             }
-            return '';
+
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            const idSegment = pathSegments.find(seg => seg.startsWith('id=') || (/^\d+$/).test(seg));
+            if (idSegment) {
+                const numeric = idSegment.match(/\d+/);
+                return numeric ? numeric[0] : idSegment.replace(/^id=/, '').trim();
+            }
+
+            return '1';
+        }
+
+        function getPlumberId() {
+            const id = getContractorIdFromLocation();
+            return id || '';
         }
 
         const plumberId = getPlumberId();
@@ -909,19 +919,7 @@
                 callAgentBtn.disabled = true;
                 updateCallButtonLabel('Connecting...');
 
-                const pathSegments = window.location.pathname.split('/').filter(Boolean);
-                let contractorId = '1';
-                const idSegment = pathSegments.find(seg => seg.startsWith('id=') || !isNaN(seg));
-                if (idSegment) {
-                    contractorId = idSegment.startsWith('id=') ? idSegment.split('=')[1] : idSegment;
-                } else {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    contractorId = urlParams.get('id') || urlParams.get('contractor_id') || '1';
-                }
-
-                contractorId = String(contractorId || '1').trim();
-                const numericMatch = contractorId.match(/\d+/);
-                if (numericMatch) contractorId = numericMatch[0];
+                const contractorId = getContractorIdFromLocation();
 
                 const retellConfig = await getRetellConfig();
                 const configuredAgentId = retellConfig.agentId || 'agent_d9f85d3df4926cf8890265a975';
