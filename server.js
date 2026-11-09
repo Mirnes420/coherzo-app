@@ -425,15 +425,13 @@ async function startSock() {
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
                 const isSessionConflict = statusCode === 440 || lastDisconnect?.error?.message === 'Stream Errored (conflict)' || lastDisconnect?.error?.output?.payload?.message === 'Stream Errored (conflict)';
                 const isStreamReplaced = lastDisconnect?.error?.data?.attrs?.type === 'replaced' || lastDisconnect?.error?.message === 'Stream Errored (conflict)' || lastDisconnect?.error?.output?.payload?.message === 'Stream Errored (conflict)';
+                const shouldClearAuth = statusCode === DisconnectReason.loggedOut || isStreamReplaced;
 
-                // If WA reported a stale session/stream conflict or a terminated connection,
-                // clear saved auth and force a fresh login instead of reconnecting forever.
-                // NOTE: a `type: replaced` conflict means another session already owns the account.
-                // Auto-restarting immediately only loops against that replacement, so we pause the loop
-                // until an explicit restart / fresh login is performed.
-                if (statusCode === 428 || statusCode === 440 || isSessionConflict) {
-                    const reasonText = statusCode === 428 ? 'Connection Terminated' : isStreamReplaced ? 'Stream replaced by another session' : 'Stream conflict / stale session';
-                    console.log(`Detected ${statusCode || '440'} ${reasonText} — clearing saved auth and resetting the socket state.`);
+                // Keep the persisted auth state for ordinary reconnects. Only clear when the
+                // session was explicitly logged out or a second session replaced this one.
+                if (shouldClearAuth) {
+                    const reasonText = statusCode === DisconnectReason.loggedOut ? 'session explicitly logged out' : 'Stream replaced by another session';
+                    console.log(`Detected ${reasonText} — clearing saved auth and resetting the socket state.`);
                     currentQR = "";
 
                     const now = Date.now();
@@ -488,7 +486,7 @@ async function startSock() {
                     return;
                 }
 
-                // Normal close: fully destroy the old socket so it cannot fire more events
+                // Normal close: preserve stored auth and reconnect using the same credentials.
                 if (deadSock?.ev) {
                     try { deadSock.ev.removeAllListeners(); } catch (e) { }
                 }
@@ -498,7 +496,7 @@ async function startSock() {
                 sock = null;
 
                 const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-                console.log('Connection closed due to ', lastDisconnect?.error, ', reconnecting: ', shouldReconnect);
+                console.log('Connection closed due to ', lastDisconnect?.error, ', reconnecting: ', shouldReconnect, 'using persisted auth state');
                 if (shouldReconnect) {
                     setTimeout(startSock, 5000); // Reconnect after 5 seconds
                 }
