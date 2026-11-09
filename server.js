@@ -1033,6 +1033,17 @@ app.post('/retell-webhook', express.json(), async (req, res) => {
         const phone = call?.from_number || call?.caller_number || '';
         const transcript = call?.transcript || '';
         const summary = call?.call_summary || '';
+        const transcriptObj = call?.transcript_object || [];
+
+        // Check if user spoke or if any incident details were provided
+        const hasUserUtterance = Array.isArray(transcriptObj) && transcriptObj.some(item => item?.role === 'user' && String(item?.content || '').trim());
+        const hasUserInTranscript = Boolean(transcript && /\buser:/i.test(transcript));
+        const hasDirectDetails = Boolean(summary && summary.trim());
+
+        if (!hasUserUtterance && !hasUserInTranscript && !hasDirectDetails) {
+            console.log('📞 Retell webhook: Empty or abandoned call without user speech, ignoring incident creation.');
+            return res.status(200).json({ message: 'Ignored abandoned/empty call' });
+        }
         
         // Use transcript or summary as the description
         const description = summary || transcript || 'No details provided';
