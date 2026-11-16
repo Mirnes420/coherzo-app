@@ -797,10 +797,17 @@
 
                 <form id="setpw-form" novalidate>
 
+                    <div class="field" id="setpw-select-field" style="display:none;">
+                        <label for="setpw-contractor-select">Choose Contractor</label>
+                        <select id="setpw-contractor-select" onchange="onContractorSelectChange(this.value)" style="width: 100%; padding: 0.65rem 0.85rem; background: var(--bg-card, #fff); border: 1px solid var(--border, #e4e4e7); border-radius: 8px; color: var(--text-primary, #09090b); font-size: 0.9rem;">
+                            <option value="">-- Choose a contractor or enter below --</option>
+                        </select>
+                    </div>
+
                     <div class="field">
-                    <label for="setpw-phone">Registered Phone</label>
-                    <input type="tel" id="setpw-phone" name="phone" placeholder="e.g. 123456789" autocomplete="tel">
-                </div>
+                        <label for="setpw-phone" id="setpw-phone-label">Registered Phone or Contractor ID</label>
+                        <input type="text" id="setpw-phone" name="phone" placeholder="e.g. 1 or +385919293138" autocomplete="off">
+                    </div>
                     <div class="field">
                         <label for="setpw-password">New Password (min. 6 chars)</label>
                         <input type="password" id="setpw-password" name="password" placeholder="Choose a password" autocomplete="new-password">
@@ -909,16 +916,53 @@
             clearMsgs();
         }
 
+        async function loadPlumbersForSetPw() {
+            const select = document.getElementById('setpw-contractor-select');
+            if (!select || !isAdminMaster) return;
+            try {
+                const res = await fetch('/api/admin/plumbers', {
+                    headers: getAuthHeader(),
+                    credentials: 'same-origin'
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const plumbers = data.plumbers || [];
+                select.innerHTML = '<option value="">-- Choose a contractor or enter below --</option>';
+                plumbers.forEach(p => {
+                    const opt = document.createElement('option');
+                    // Store phone (or id if phone empty)
+                    opt.value = p.contractor_phone || p.id;
+                    opt.textContent = `${p.name} (ID: ${p.id}, Phone: ${p.contractor_phone || 'None'}) ${p.has_password ? '✓' : '(No password)'}`;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.warn('Could not load plumbers:', err);
+            }
+        }
+
+        function onContractorSelectChange(val) {
+            if (val) {
+                document.getElementById('setpw-phone').value = val;
+            }
+        }
+
         function applySetpwFieldState() {
             const input = document.getElementById('setpw-phone');
+            const selectWrap = document.getElementById('setpw-select-field');
+            const label = document.getElementById('setpw-phone-label');
             if (isAdminMaster) {
                 input.readOnly = false;
                 input.value = '';
-                input.placeholder = 'e.g. 123456789';
+                input.placeholder = 'e.g. 1 or +385919293138 or Mario Mario';
+                if (label) label.textContent = 'Contractor Phone, ID, or Name';
+                if (selectWrap) selectWrap.style.display = 'block';
+                loadPlumbersForSetPw();
             } else {
                 input.readOnly = true;
                 input.value = adminPhone;
                 input.placeholder = '';
+                if (label) label.textContent = 'Registered Phone';
+                if (selectWrap) selectWrap.style.display = 'none';
             }
         }
 
@@ -994,7 +1038,7 @@
                         sessionStorage.setItem(adminTokenKey, data.token);
                     }
                     adminPhone = data.phone || phone;
-                    isAdminMaster = data.is_master || false;
+                    isAdminMaster = !!(data.is_master || data.isMaster || (adminPhone && adminPhone.toUpperCase() === 'ALL') || (phone.trim().toLowerCase() === 'admin'));
                     enterDashboard(data.name);
                 }
             } catch (err) {
@@ -1256,24 +1300,33 @@
 
         async function setIncidentStatus(id, status) {
             // Optimistic update in both the full set and the currently visible (searched) set
-            const inc = allIncidents.find(i => i.id === id);
+            const inc = allIncidents.find(i => String(i.id) === String(id));
             if (inc) inc.status = status;
+            const vis = visibleIncidents.find(i => String(i.id) === String(id));
+            if (vis) vis.status = status;
+
             closeDrawer();
             renderTable(visibleIncidents);
             renderStats(visibleIncidents);
 
-            // Persist via FastAPI (best-effort)
+            // Persist via FastAPI
             try {
-                await fetch(`/api/admin/incident-status`, {
+                const res = await fetch(`/api/admin/incident-status`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         ...getAuthHeader()
                     },
-                    body: JSON.stringify({ id, status }),
+                    body: JSON.stringify({ id: String(id), status }),
                     credentials: 'same-origin'
                 });
-            } catch { /* non-critical */ }
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    console.error('Failed to update status on server:', errData);
+                }
+            } catch (err) {
+                console.error('Network error updating status:', err);
+            }
         }
 
         // ── Check session on load
@@ -1285,8 +1338,11 @@
                 });
                 if (res.ok) {
                     const data = await res.json();
+                    if (data.token) {
+                        sessionStorage.setItem(adminTokenKey, data.token);
+                    }
                     adminPhone = data.phone || '';
-                    isAdminMaster = data.is_master || false;
+                    isAdminMaster = !!(data.is_master || data.isMaster || (adminPhone && adminPhone.toUpperCase() === 'ALL'));
                     enterDashboard(data.name);
                 }
             } catch { /* show login */ }

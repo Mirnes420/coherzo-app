@@ -1366,3 +1366,327 @@ button:active {
     margin-top: 2px;
     color: var(--accent-red);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE OPTIMIZATIONS: FULL SCREEN NO-SCROLL INTAKE
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+    html {
+        height: 100%;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    body {
+        height: 100%;
+        height: 100dvh;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: stretch;
+        background: #ffffff;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .minimal-card {
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 0.75rem 1rem 0.85rem;
+        box-sizing: border-box;
+        overflow: hidden;
+        margin: 0;
+    }
+
+    /* Compact mode switch */
+    .mode-switch {
+        margin: 0 0 0.5rem;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .mode-btn {
+        padding: 0.45rem 0.75rem;
+        font-size: 0.78rem;
+    }
+
+    /* Active mode panels fill available height */
+    .mode-panel.is-active {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* ── VOICE CALL INTAKE ──────────────────────────────────── */
+    #voice-mode-panel .voice-call-shell {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+        gap: 0.45rem;
+        overflow: hidden;
+    }
+
+    #voice-mode-panel .voice-header {
+        margin-bottom: 0.2rem;
+        flex-shrink: 0;
+        text-align: center;
+    }
+
+    #voice-mode-panel .header .eyebrow {
+        font-size: 0.65rem;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.2rem;
+    }
+
+    #voice-mode-panel h1 {
+        font-size: 1.25rem;
+        margin-bottom: 0.15rem;
+        line-height: 1.2;
+    }
+
+    #voice-mode-panel .subtitle {
+        font-size: 0.78rem;
+        line-height: 1.3;
+        margin-bottom: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    #voice-mode-panel .voice-status-row {
+        flex-shrink: 0;
+        font-size: 0.72rem;
+        padding: 0.1rem 0;
+    }
+
+    #voice-mode-panel .voice-transcript-panel {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border-radius: 14px;
+        margin-bottom: 0.25rem;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+    }
+
+    #voice-mode-panel .voice-transcript-header {
+        padding: 0.45rem 0.75rem;
+        font-size: 0.65rem;
+        flex-shrink: 0;
+    }
+
+    #voice-mode-panel .voice-transcript-stream {
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+        padding: 0.65rem 0.75rem;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 0.45rem;
+    }
+
+    #voice-mode-panel .call-agent-btn {
+        flex-shrink: 0;
+        width: 100% !important;
+        padding: 0.75rem 1rem !important;
+        margin-top: auto;
+    }
+
+    #voice-mode-panel .call-agent-btn .text {
+        font-size: 1rem;
+        padding-left: 2rem;
+    }
+
+    /* ── FORM INTAKE ────────────────────────────────────────── */
+    #form-mode-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    #form-mode-panel .header {
+        margin-bottom: 0.4rem;
+        flex-shrink: 0;
+        text-align: center;
+    }
+
+    #form-mode-panel .header .eyebrow {
+        font-size: 0.65rem;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.2rem;
+    }
+
+    #form-mode-panel h1 {
+        font-size: 1.25rem;
+        margin-bottom: 0.15rem;
+        line-height: 1.2;
+    }
+
+    #form-mode-panel .subtitle {
+        font-size: 0.78rem;
+        line-height: 1.3;
+        margin-bottom: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .steps-progress-container {
+        margin-bottom: 0.6rem;
+        padding: 0 6px;
+        flex-shrink: 0;
+    }
+
+    .step-indicator {
+        width: 26px;
+        height: 26px;
+        font-size: 0.75rem;
+    }
+
+    .step-indicator-label {
+        font-size: 0.62rem;
+        bottom: -18px;
+    }
+
+    #incident-form {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        justify-content: space-between;
+        overflow: hidden;
+    }
+
+    .step-content.active {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.65rem;
+    }
+
+    .form-group label {
+        font-size: 0.68rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .pro-selector-group {
+        gap: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+    .pro-btn {
+        flex: 1;
+        padding: 6px 4px;
+        font-size: 0.78rem;
+        flex-direction: column;
+        gap: 2px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .pro-btn img.pro-icon {
+        width: 18px !important;
+        height: 18px !important;
+        margin-bottom: 0 !important;
+    }
+
+    textarea#description {
+        min-height: 70px;
+        max-height: 110px;
+        height: 80px;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.88rem;
+        line-height: 1.35;
+        resize: none;
+    }
+
+    .pill-wrapper {
+        margin-top: 4px !important;
+        gap: 5px !important;
+    }
+
+    .suggest-pill {
+        font-size: 0.72rem;
+        padding: 4px 10px;
+    }
+
+    .file-upload-wrapper {
+        padding: 1rem 0.85rem;
+    }
+
+    .preview-container {
+        margin-top: 0.75rem;
+    }
+
+    .preview-container img {
+        max-height: 130px;
+    }
+
+    .input-wrapper input {
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+        font-size: 0.88rem;
+    }
+
+    .wizard-actions {
+        margin-top: 0.5rem;
+        padding-top: 0.35rem;
+        flex-shrink: 0;
+        gap: 8px;
+    }
+
+    .wizard-actions button {
+        padding: 0.7rem 1rem;
+        font-size: 0.88rem;
+    }
+
+    .success-screen {
+        padding: 24px 16px !important;
+        justify-content: center;
+        flex: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+}
