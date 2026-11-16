@@ -1486,14 +1486,31 @@ button:active {
         flex-shrink: 0;
     }
 
-    /* Active mode panels fill available height */
+    /* Mode panels display handling on mobile */
+    .mode-panel {
+        display: none !important;
+    }
+
     .mode-panel.is-active {
         flex: 1;
-        display: flex;
+        display: flex !important;
         flex-direction: column;
         min-height: 0;
         height: 100%;
         overflow: hidden;
+    }
+
+    #form-mode-panel {
+        display: none !important;
+    }
+
+    #voice-mode-panel {
+        display: none !important;
+    }
+
+    #form-mode-panel.is-active,
+    #voice-mode-panel.is-active {
+        display: flex !important;
     }
 
     /* ── VOICE CALL INTAKE ──────────────────────────────────── */
@@ -1581,9 +1598,9 @@ button:active {
     }
 
     /* ── FORM INTAKE ────────────────────────────────────────── */
-    #form-mode-panel {
+    #form-mode-panel.is-active {
         flex: 1;
-        display: flex;
+        display: flex !important;
         flex-direction: column;
         min-height: 0;
         height: 100%;
