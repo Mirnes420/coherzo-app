@@ -296,38 +296,71 @@ body {
 .mode-switch {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    margin: 0 0 1.25rem;
+    gap: 6px;
+    background: #f4f4f5;
+    border: 1px solid #e4e4e7;
+    border-radius: 14px;
+    padding: 5px;
+    margin: 0 0 1rem;
+    position: relative;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .mode-btn {
     appearance: none;
-    border: 0;
-    border-radius: 999px;
+    border: 1px solid transparent;
+    border-radius: 10px;
     background: transparent;
-    color: var(--color-secondary);
+    color: #71717a;
     font-weight: 700;
-    font-size: 0.82rem;
-    letter-spacing: 0.02em;
-    padding: 0.7rem 1rem;
+    font-size: 0.86rem;
+    letter-spacing: 0.01em;
+    padding: 0.65rem 1rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     box-shadow: none;
-    border: 1px solid var(--border-color);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mode-btn * {
+    pointer-events: none;
 }
 
 .mode-btn:hover {
-    color: var(--bg-color);
+    color: #18181b;
+    background: rgba(255, 255, 255, 0.6);
 }
 
 .mode-btn.is-active {
     background: #111827;
-    color: #fff;
-    box-shadow: 0 8px 18px rgba(17, 24, 39, 0.15);
+    color: #ffffff;
+    border-color: #111827;
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.mode-btn svg {
+    flex-shrink: 0;
+    transition: transform 0.2s ease, stroke 0.2s ease;
+}
+
+.mode-btn.is-active svg {
+    stroke: #ffffff;
+}
+
+.mode-btn:not(.is-active) svg {
+    stroke: #71717a;
+}
+
+.mode-switch-divider {
+    height: 1px;
+    background: #e4e4e7;
+    margin: 0 0 1rem;
+    width: 100%;
 }
 
 .mode-panel {
@@ -1419,16 +1452,38 @@ button:active {
         margin: 0;
     }
 
-    /* Compact mode switch */
+    /* Prominently divided mode switch on mobile */
     .mode-switch {
-        margin: 0 0 0.5rem;
-        gap: 6px;
+        margin: 0 0 0.45rem;
+        gap: 5px;
+        background: #f4f4f5;
+        border: 1px solid #e4e4e7;
+        border-radius: 12px;
+        padding: 4px;
         flex-shrink: 0;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
     }
 
     .mode-btn {
-        padding: 0.45rem 0.75rem;
-        font-size: 0.78rem;
+        padding: 0.5rem 0.65rem;
+        font-size: 0.82rem;
+        border-radius: 8px;
+        gap: 6px;
+    }
+
+    .mode-btn.is-active {
+        background: #111827;
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(17, 24, 39, 0.2);
+    }
+
+    /* Distinct dividing line below the options on mobile */
+    .mode-switch-divider {
+        height: 1px;
+        background: #e4e4e7;
+        margin: 0 0 0.55rem;
+        width: 100%;
+        flex-shrink: 0;
     }
 
     /* Active mode panels fill available height */
