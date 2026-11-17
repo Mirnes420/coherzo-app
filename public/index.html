@@ -283,9 +283,21 @@
                 button.classList.toggle('is-active', button.dataset.mode === mode);
             });
             modePanels.forEach((panel) => {
-                panel.classList.toggle('is-active', panel.id === `${mode}-mode-panel`);
+                const isTarget = panel.id === `${mode}-mode-panel`;
+                panel.classList.toggle('is-active', isTarget);
+                // Force inline display to avoid CSS specificity issues on mobile
+                panel.style.display = isTarget ? '' : 'none';
             });
         }
+
+        // On initial load, hide the inactive panel explicitly
+        (function() {
+            modePanels.forEach((panel) => {
+                if (!panel.classList.contains('is-active')) {
+                    panel.style.display = 'none';
+                }
+            });
+        })();
 
         modeButtons.forEach((button) => {
             button.addEventListener('click', () => setActiveMode(button.dataset.mode));
@@ -455,10 +467,10 @@
         let toastTimer = null;
 
         function showToast(message, type = 'success') {
-            let toast = document.getElementById('retell-toast');
+            let toast = document.getElementById('call-toast') || document.getElementById('retell-toast');
             if (!toast) {
                 toast = document.createElement('div');
-                toast.id = 'retell-toast';
+                toast.id = 'call-toast';
                 toast.style.position = 'fixed';
                 toast.style.right = '20px';
                 toast.style.bottom = '20px';
@@ -919,11 +931,11 @@
                 try {
                     callAgentBtn.disabled = true;
                     updateCallButtonLabel('Ending...');
+                    showToast('Ending call...');
                     await retellSession.end();
-                    showToast('Ending Retell call');
                 } catch (err) {
                     console.error(err);
-                    showToast('Could not end the Retell call', 'error');
+                    showToast('Could not end the call', 'error');
                     resetCallButtonState();
                 }
                 return;
@@ -932,6 +944,7 @@
             try {
                 callAgentBtn.disabled = true;
                 updateCallButtonLabel('Connecting...');
+                showToast('Starting call...');
 
                 const contractorId = getContractorIdFromLocation();
 
@@ -939,7 +952,7 @@
                 const configuredAgentId = retellConfig.agentId || 'agent_d9f85d3df4926cf8890265a975';
                 const publicKey = retellConfig.publicKey || '';
                 if (!publicKey) {
-                    throw new Error('Retell public key is missing.');
+                    throw new Error('Call configuration is missing.');
                 }
 
                 const contractorContext = await getContractorContext(contractorId) || {};
@@ -962,7 +975,7 @@
                     retell_llm_dynamic_variables: contractorVars,
                     hooks: {
                         onStatus: (status) => {
-                            console.log('[Retell] status:', status);
+                            console.log('[Voice call] status:', status);
                             if (status === 'live') {
                                 isCallActive = true;
                                 callAgentBtn.disabled = false;
@@ -981,7 +994,7 @@
                             showToast('Call ended normally');
                         },
                         onError: (error) => {
-                            console.error('[Retell] error:', error);
+                            console.error('[Voice call] error:', error);
                             resetCallButtonState();
                             showToast('Call error — please retry', 'error');
                         }
@@ -998,7 +1011,9 @@
             } catch (err) {
                 console.error(err);
                 resetCallButtonState();
-                showToast(err.message || 'Could not start the Retell web call.', 'error');
+                const rawMsg = err && err.message ? err.message : '';
+                const cleanMsg = (rawMsg && !rawMsg.toLowerCase().includes('retell')) ? rawMsg : 'Could not start the call.';
+                showToast(cleanMsg, 'error');
             }
         });
 

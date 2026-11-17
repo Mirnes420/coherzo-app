@@ -699,14 +699,6 @@ body {
     width: 0;
 }
 
-.mode-panel {
-    display: none;
-}
-
-.mode-panel.is-active {
-    display: block;
-}
-
 .call-hero {
     display: flex;
     align-items: center;
@@ -1486,31 +1478,21 @@ button:active {
         flex-shrink: 0;
     }
 
-    /* Mode panels display handling on mobile */
+    /* Mode panels display handling on mobile.
+       JS also sets inline display:none on inactive panels for extra safety. */
     .mode-panel {
         display: none !important;
     }
 
-    .mode-panel.is-active {
+    .mode-panel.is-active,
+    #form-mode-panel.is-active,
+    #voice-mode-panel.is-active {
         flex: 1;
         display: flex !important;
         flex-direction: column;
         min-height: 0;
         height: 100%;
         overflow: hidden;
-    }
-
-    #form-mode-panel {
-        display: none !important;
-    }
-
-    #voice-mode-panel {
-        display: none !important;
-    }
-
-    #form-mode-panel.is-active,
-    #voice-mode-panel.is-active {
-        display: flex !important;
     }
 
     /* ── VOICE CALL INTAKE ──────────────────────────────────── */
@@ -1598,15 +1580,6 @@ button:active {
     }
 
     /* ── FORM INTAKE ────────────────────────────────────────── */
-    #form-mode-panel.is-active {
-        flex: 1;
-        display: flex !important;
-        flex-direction: column;
-        min-height: 0;
-        height: 100%;
-        overflow: hidden;
-    }
-
     #form-mode-panel .header {
         margin-bottom: 0.4rem;
         flex-shrink: 0;
